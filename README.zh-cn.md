@@ -1,146 +1,98 @@
-<h1 align="center">DeepSeek V4 for Copilot Chat</h1>
+# Copilot Chat Responses 模型
 
-<p align="center">
-  <!-- marketplace-readme:remove-start -->
-  <a href="https://marketplace.visualstudio.com/items?itemName=Vizards.deepseek-v4-for-copilot"><img src="https://img.shields.io/badge/VS%20Code%20Marketplace-Install-007ACC?logo=visualstudiocode&logoColor=white&style=for-the-badge" alt="从 VS Code Marketplace 安装"></a>
-  <a href="https://open-vsx.org/extension/Vizards/deepseek-v4-for-copilot"><img src="https://img.shields.io/badge/Open%20VSX-Install-6A4FB6?style=for-the-badge" alt="从 Open VSX 安装"></a>
-  <br/>
-  <!-- marketplace-readme:remove-end -->
-  <img src="https://img.shields.io/github/v/release/Vizards/deepseek-v4-for-copilot?style=for-the-badge&label=Version" alt="版本" />
-  <img src="https://vsmarketplacebadges.dev/installs-short/Vizards.deepseek-v4-for-copilot.svg?style=for-the-badge" alt="安装量" />
-</p>
+<!-- marketplace-readme:remove-start -->
+[English](README.md) · [更新记录](CHANGELOG.md) · [MIT](LICENSE)
+<!-- marketplace-readme:remove-end -->
 
-<p align="center">
-  <a href="https://github.com/Vizards/deepseek-v4-for-copilot/blob/main/README.md">English</a> |
-  简体中文
-</p>
+在 Copilot Chat 的模型选择器中使用兼容 OpenAI Responses 的端点。默认配置是 **GPT 6.1 Sol**，地址为 **https://gd.yundu.lol/v1/responses**，使用你自行提供的服务商 API Key。为兼容现有集成，扩展 ID、DeepSeek 提供方标识、命令 ID 和 `deepseek-copilot.*` 设置命名空间保持不变。
 
-**在 Copilot Chat 模型选择器中直接使用 DeepSeek V4——无需离开你熟悉的 Copilot 工作流。**
+端点、模型名称、能力和令牌限制来自**用户提供的 `model.json` 配置**，并非独立验证的 OpenAI 公开模型规格。本扩展不保证与 GitHub Copilot 内置专有服务、模型行为、工具或订阅功能完全一致。端点可用性、计费、隐私和速率限制由服务商决定；这里不宣称任何模型价格。
 
-<p align="center">
-  <img src="resources/screenshots/01-picker.png" alt="DeepSeek V4 Flash、Flash Vision Exp 和 Pro 出现在 Copilot Chat 模型选择器中，并展示思考深度菜单" width="800">
-</p>
+## 开始使用
 
-喜欢 DeepSeek 的性价比，但不想放弃 GitHub Copilot 的 Agent 模式、工具调用和成熟的交互体验？本扩展将 **DeepSeek V4.1 Flash 等模型**直接接入 Copilot Chat 模型选择器，支持**原生视觉或视觉代理**、**思考模式**，并使用你自己的 API Key。
+1. 使用 **VS Code 1.116 及以上版本**，并确保当前账号能够使用 Copilot Chat。提供方集成与部分模型选择器控件依赖 VS Code/Copilot API，版本升级可能影响兼容性。
+2. 安装或构建本扩展，沿用的扩展名称是 **DeepSeek V4 for Copilot Chat**。
+3. 在设置中核对端点后，从命令面板运行 **DeepSeek: 设置 API Key**，输入该端点签发的令牌。密钥通过 VS Code **SecretStorage** 保存，不写入 `settings.json`。使用 **DeepSeek: 清除 API Key** 可删除。保留的“获取 API Key”命令仍打开 DeepSeek 网站，不能为默认第三方端点签发令牌。
+4. 打开 Copilot Chat，选择 **GPT 6.1 Sol**。若模型被隐藏，打开语言模型管理器，在 **DeepSeek** 提供方下显示它。模型的配置菜单可选择思考强度。
 
-## 为什么选这个扩展？
+这些配置不会主动查找凭据，也未通过真实端点请求验证模型能力。发送代码、提示词或图片前，请自行了解服务商。
 
-- **不是替换 Copilot，而是增强它。** 没有新的侧边栏，没有新的聊天界面需要学习。只是在你已经在用的模型选择器中多了一个选项。
-- **Agent 模式、工具调用、Instructions、MCP、Skills——全部正常运作。** Copilot 的完整能力栈，现在跑在 DeepSeek 上。
-- **两种图片处理方式。** V4.1 Flash 和 Flash Vision Exp 会原生接收图片附件；V4 Flash 和 Pro 则保留原有文本上下文，由可配置的视觉代理将图片转换为文字描述。
-- **需自行提供 API Key，直接向 DeepSeek 付费。** 你的 API Key，你的账单，你的速率限制。密钥存储在操作系统密钥链中，不会以明文形式写入磁盘。
+## 配置
 
-## 功能特性
-
-### DeepSeek 模型出现在模型选择器中
-选择器包含 V4.1 Flash、V4 Pro，并保留旧 Flash 模型名对应的入口，支持长上下文、工具调用和可配置的思考强度。
-
-### 原生视觉与视觉代理
-可以根据对话需要选择不同的图片处理路径：
-
-- **DeepSeek V4.1 Flash 和 Flash Vision Exp** 直接处理图片附件，不经过视觉代理。
-- **DeepSeek V4 Flash 和 Pro** 入口使用视觉代理：先由支持图片输入的模型描述附件，再将描述连同对话内容交给 DeepSeek 主模型。自动模式会在可用时选择 Flash Vision Exp，同时继续支持显式配置其他 VS Code 模型或 API 端点。
-
-[上下文缓存](https://api-docs.deepseek.com/zh-cn/guides/kv_cache/)命中需要完整匹配已有的缓存前缀。
-
-<p align="center">
-  <img src="resources/screenshots/03-vision.png" alt="将图片拖入 Copilot Chat，DeepSeek 通过视觉代理响应" width="800">
-</p>
-
-### 思考模式与思考强度控制
-支持 DeepSeek 的思考模式和 `reasoning_content`。`停用`关闭思考模式；开启后可选择`轻量`（`low`）、`标准`（`high`，默认）或`深度`（`max`）。
-
-### 继承全部 Copilot 能力
-由于本扩展接入的是 Copilot 的原生 provider API，你免费获得完整能力栈：
-- **Agent 模式**——自主执行多步骤任务
-- **工具调用**——文件编辑、终端操作、工作区搜索、Git、测试
-- **Instructions & Skills**——你的 `.instructions.md`、`AGENTS.md` 和各项 Skills 开箱即用
-- **Prompt 缓存统计**——在输出通道中记录 DeepSeek 缓存命中率，直观看到成本节省
-
-<p align="center">
-  <img src="resources/screenshots/04-agent.png" alt="DeepSeek V4 Pro 运行 Copilot 的 Agent 模式，执行工具调用" width="800">
-</p>
-
-### 安全优先
-API Key 存储在 VS Code 的 `SecretStorage` 中（macOS 钥匙串 / Windows 凭据管理器 / Linux 密钥环）。绝不会出现在 `settings.json` 中，也不会被提交到 Git 历史。
-
-### 零运行时依赖
-纯 VS Code API + Node.js 内置模块。无需 Python、Docker 或本地代理进程。
-
-## 快速开始
-
-### 前置条件
-
-- VS Code 1.116 及以上版本。本扩展依赖非公开的 Copilot Chat API，较新的 VS Code 版本可能存在兼容性问题——如遇到请[提交 Issue](https://github.com/Vizards/deepseek-v4-for-copilot/issues)。
-- GitHub Copilot 订阅（Free / Pro / Enterprise——免费版即可使用）
-- DeepSeek API Key，从 [platform.deepseek.com](https://platform.deepseek.com) 获取；使用自定义 `deepseek-copilot.baseUrl` 时也可使用兼容的 provider token
-
-### 安装方式
-
-根据你所使用的编辑器选择对应的注册表安装：
-
-1. **Microsoft VS Code** — 从 [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Vizards.deepseek-v4-for-copilot) 安装。
-2. **使用 Open VSX 的编辑器** — 从 [Open VSX](https://open-vsx.org/extension/Vizards/deepseek-v4-for-copilot) 安装。
-
-### 使用步骤
-
-1. 通过命令面板（`Cmd+Shift+P`）运行 **DeepSeek: 设置 API Key**
-2. 粘贴你的 Key 或兼容的 provider token（官方 DeepSeek Key 通常以 `sk-` 开头）
-3. 打开 Copilot Chat，点击模型选择器，选择 **DeepSeek V4.1 Flash** 或 **DeepSeek V4 Pro**
-4. 搞定——开始聊天
-
-## 模型
-
-| 模型入口 | 图片处理 | 思考强度 | 官方 API 状态 |
-|---|---|---|---|
-| **DeepSeek V4.1 Flash** | 原生图片输入 | `停用` / `轻量` / `标准` / `深度` | 使用模型名 `deepseek-flash` 调用 |
-| **DeepSeek V4 Pro** | 视觉代理 | `停用` / `轻量` / `标准` / `深度` | 继续提供 API 调用服务，计费方式保持不变 |
-| **DeepSeek V4 Flash** | 视觉代理 | `停用` / `轻量` / `标准` / `深度` | 原模型已下线；旧模型名仍可调用 |
-| **DeepSeek V4 Flash Vision Exp** | 原生图片输入 | `停用` / `轻量` / `标准` / `深度` | 原模型已下线；旧模型名仍可调用 |
-
-在官方 API 中，两个旧模型名（`deepseek-v4-flash` 和 `deepseek-v4-flash-vision-exp`）的请求均由 DeepSeek-V4.1-Flash 提供服务，按 Flash 价格计费。
-
-四个入口均支持思考模式、工具调用和 1M Token 上下文。官方 API 的下线、路由和计费说明见[模型与价格文档](https://api-docs.deepseek.com/zh-cn/quick_start/pricing/)。
-
-## 设置项
-
-| 设置项 | 默认值 | 说明 |
-|---|---|---|
-| `deepseek-copilot.baseUrl` | `https://api.deepseek.com` | API 端点——可改为自托管或代理部署地址 |
-| `deepseek-copilot.requestHeaders` | `{}` | 聊天补全请求的自定义请求头。[配置说明](https://github.com/Vizards/deepseek-v4-for-copilot/blob/main/docs/settings/request-headers.zh.md) |
-| `deepseek-copilot.maxTokens` | `0` | 最大输出 Token 数（`0` = API 默认值）。可用于成本控制 |
-| `deepseek-copilot.modelIdOverrides` | 预填官方 ID 映射 | 各 DeepSeek 模型入口对应的 API 模型 ID。仅在使用模型名不同的兼容第三方 API 时修改 |
-| `deepseek-copilot.debugMode` | `minimal` | 诊断模式：`minimal` 仅上报 token 用量，`metadata` 输出隐私安全日志，`verbose` 将完整请求 dump 和 pipeline snapshot 写入扩展 global storage。完整 dump 可能包含敏感提示词文本、工具定义、文件片段和图片描述。使用 `DeepSeek: 打开请求 Dump 目录` 打开 dump 位置 |
-| `deepseek-copilot.visionModel` | *(自动)* | V4 Flash 和 Pro 使用的视觉代理。自动模式会在可用时选择 Flash Vision Exp；也可通过 `DeepSeek: 配置视觉代理` 改用其他 VS Code 模型或 API 端点 |
-| `deepseek-copilot.visionPrompt` | *(内置)* | V4 Flash/Pro 的视觉代理用于描述图片附件的提示词，不影响 V4.1 Flash 或 Flash Vision Exp 的原生图片请求 |
-| `deepseek-copilot.experimental.stabilizeToolList` | `false` | 实验性设置。尝试预先激活 VS Code/Copilot 的虚拟工具，让传给 DeepSeek API 的 `tools` 参数在多轮对话中更完整、更稳定。当已启用工具跨轮次变化时，可能提高上下文缓存命中率。代价是 input tokens 可能增加；缓存命中的 input tokens 单价更低，但仍会计入用量。64 个或更少已启用工具时通常无需开启，除非工具列表仍在跨轮次变化 |
-
-思考强度可通过 Copilot Chat 的模型选择器对每个 DeepSeek 模型单独设置。
-
-兼容 API 代理的 `settings.json` 配置示例：
+以下完整 `settings.json` 示例重现默认端点配置：
 
 ```json
 {
-  "deepseek-copilot.modelIdOverrides": {
-    "deepseek-flash": "your-v4.1-flash-model-id",
-    "deepseek-v4-flash": "your-flash-model-id",
-    "deepseek-v4-pro": "your-pro-model-id",
-    "deepseek-v4-flash-vision-exp": "your-vision-model-id"
-  }
+  "deepseek-copilot.baseUrl": "https://gd.yundu.lol/v1/responses",
+  "deepseek-copilot.models": [
+    {
+      "id": "gpt-6.1-sol",
+      "name": "GPT 6.1 Sol",
+      "family": "gpt",
+      "version": "6.1-sol",
+      "maxInputTokens": 272000,
+      "maxOutputTokens": 64000,
+      "contextWindowTokens": 272000,
+      "toolCalling": true,
+      "imageInput": true,
+      "thinking": true,
+      "supportedReasoningEfforts": ["low", "medium", "high", "xhigh", "max"],
+      "defaultReasoningEffort": "high",
+      "canDisableReasoning": false
+    }
+  ],
+  "deepseek-copilot.maxTokens": 0,
+  "deepseek-copilot.promptCacheKey": "auto",
+  "deepseek-copilot.modelIdOverrides": {},
+  "deepseek-copilot.requestHeaders": {}
 }
 ```
 
-## 方案对比
+- `models` 会**替换**可选模型列表，`[]` 可隐藏全部模型。每项必须提供 `id` 及有限正整数的输入、输出限制。名称、系列、版本和详情属于可选显示信息。自定义模型的能力默认关闭，只应启用后端明确支持的能力。`imageInput: true` 表示 Responses 原生图片输入，不经过视觉代理。
+- 用户提供的配置还包含 `gpt-6-sol` 和 `gpt-5.6-sol`。需要时可添加对应 ID、名称和版本的配置，仅在适用于该服务时沿用所提供的限制和思考强度。两者不会自动启用。旧版 DeepSeek 模型不会成为默认 Responses 模型。
+- `modelIdOverrides` 可为任意选择器模型 ID 指定实际发送的 API ID，例如 `{"gpt-6.1-sol": "your-deployment-id"}`。它只改变发送的名称，不改变能力或限制。
+- `requestHeaders` 用于额外的服务商请求头。凭据应存入 SecretStorage，不要写进设置文件。
 
-| | 本扩展 | 本地代理（如 LiteLLM） | 独立 DeepSeek 扩展 |
-|---|---|---|---|
-| 在 Copilot Chat 内使用 | ✅ | ✅ | ❌ 独立界面 |
-| Agent 模式、工具、Skills | ✅ | ✅ | ⚠️ 自行实现 |
-| 视觉支持 | ✅ 原生 + 代理 | ❌ | ❌ |
-| 无需额外运行进程 | ✅ | ❌ | ✅ |
-| 一键安装 | ✅ | ❌ | ✅ |
-| API Key 存系统密钥链 | ✅ | ❌ | ⚠️ 各异 |
+### 端点地址处理
 
-## 许可证
+配置会去除首尾空白和末尾斜杠。以 `/responses` 结尾的 URL 直接使用，其余地址由客户端追加 `/responses`。服务商要求 `/v1` 时，请自行在地址中包含它：
 
-[MIT](LICENSE)
+| 设置值 | 请求地址 |
+|---|---|
+| `https://gd.yundu.lol/v1/responses` | `https://gd.yundu.lol/v1/responses` |
+| `https://gd.yundu.lol/v1/` | `https://gd.yundu.lol/v1/responses` |
+| `https://api.openai.com/v1` | `https://api.openai.com/v1/responses` |
+
+修改域名不会让模型 ID 自动在新服务上可用；请同时配置该服务支持的模型和能力。主提供方**只使用 Responses 协议**，Chat Completions 或旧版 DeepSeek API 地址不会触发协议回退。URL 必须为 HTTP(S)，不能包含嵌入的凭据、查询参数或片段。
+
+### 上下文与输出限制
+
+用户配置声明 `maxInputTokens: 272000` 和 `maxOutputTokens: 64000`。这里将 **272,000 视为输入与输出合计的上下文上限**，因此同时设置 `contextWindowTokens: 272000`。预留默认的 64,000 输出额度后，选择器中的**输入预算为 208,000 tokens**，不能将其理解为 272,000 输入再加 64,000 输出。
+
+`maxTokens: 0` 使用模型配置的输出上限。正整数会进一步限制输出，且不会超过模型上限。例如 `maxTokens: 16000` 会显示最多 16,000 输出和 256,000 输入。模型或输出限制修改后会刷新选择器。对其他服务，请填写其输入与输出合计的 `contextWindowTokens`；只有在输入和输出限制确实能够独立使用时才省略该字段。令牌估算并非权威 tokenizer，后端还可能施加更低限制，包括推理或图片的令牌开销。
+
+### 思考强度
+
+默认配置允许 `low`、`medium`、`high`、`xhigh`、`max`，默认值为 **high**。可在模型选择器中选择，或修改模型配置的 `defaultReasoningEffort`。自定义模型必须列出所支持的强度，并从中选择默认值。显式指定不支持的值会报错，不会静默回退或提升强度。
+
+请求集成可使用 `modelOptions.reasoningEffort`，也接受嵌套的 `modelOptions.reasoning.effort` 和 `thinkingLevel` 兼容别名。旧版 `modelConfiguration` 与 `configuration` 仍可读取，请求级 `modelOptions` 优先。
+
+默认配置**不提供 `none`**。只有后端明确支持停用推理时，才应设置 `canDisableReasoning: true`。强度标签表示请求参数，不保证响应质量或延迟。
+
+### 缓存键与无状态重放
+
+`promptCacheKey: "auto"` 基于模型 ID 和系统前缀的哈希生成稳定的键，键中不发送提示词原文。自定义字符串会作为 `prompt_cache_key` 发送，空字符串 `""` 则不发送该字段。缓存是否可用、保留时长、命中和计费均由后端决定；设置键不保证命中或降价。
+
+Responses 请求使用 `store: false` 并请求加密推理内容。完整且有序的 Responses 输出项列表——包括加密推理项、助手消息和函数调用——会保存到对话重放元数据中，并非仅保存界面显示的推理摘要。重放会保留推理项相对于助手消息和函数调用的原始位置，工具结果则以函数调用输出项提供，因此后续轮次无需依赖服务端的 `previous_response_id`。这要求端点能够返回并接受兼容的加密推理项。编辑历史、切换端点或模型、丢失宿主重放元数据都可能影响连续性，必要时请新建对话。推理内容加密不代表其余对话对端点不可见。
+
+## 兼容性与诊断
+
+默认用户配置启用原生图片和函数工具请求。具体可用工具、Instructions、MCP 集成和 Agent 界面由 Copilot 决定；本扩展无法重现内置提供方的全部能力，也不保证每种工具流程完全一致。本扩展没有运行时包依赖，不需要单独运行代理进程。
+
+`deepseek-copilot.debugMode` 默认是 `minimal`。`metadata` 增加诊断元数据，分享前请检查内容。`verbose` 会写入完整的本地请求 dump，可能包含提示词、源代码、图片、工具定义和重放状态。使用 **DeepSeek: 打开请求 Dump 目录** 查看文件，使用 **DeepSeek: 显示日志** 查看诊断。
+
+视觉代理命令和设置为兼容性保留，原生图片模型不需要代理。`experimental.stabilizeToolList` 默认关闭，可能增加输入令牌和内部预检调用，不保证提高后端缓存命中率。
+
+## 开发
+
+使用 **Node.js 24 及以上版本**，运行 `npm ci`、`npm run compile` 和 `npm test`。原有 `lint`、`format` 与 `format:check` 脚本保持可用。`npm run vscode:prepublish` 准备商店 README 并编译；`npm run package` 在 `dist/` 生成 VSIX。

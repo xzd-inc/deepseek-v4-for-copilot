@@ -1,4 +1,5 @@
 import vscode from 'vscode';
+import { getEffectiveModelLimits } from '../config';
 import { t } from '../i18n';
 import type {
 	ModelDefinition,
@@ -59,8 +60,7 @@ export function toChatInfo(
 		tooltip: hasApiKey ? modelTooltip : t('auth.apiKeyRequiredDetail'),
 		statusIcon: !hasApiKey || retirement ? new vscode.ThemeIcon('warning') : undefined,
 		...(retirement ? { warningText: { [retirement.code]: retirement.message } } : {}),
-		maxInputTokens: m.maxInputTokens,
-		maxOutputTokens: m.maxOutputTokens,
+		...getEffectiveModelLimits(m),
 		isBYOK: true,
 		isUserSelectable: true,
 		capabilities: {
@@ -85,20 +85,41 @@ export function getConfiguredThinkingEffort(
 ): ThinkingEffort {
 	// Prefer request-scoped overrides first so an internal proxy pass can force a
 	// specific effort without mutating the persisted user model configuration.
-	const configuredEffort =
-		options.modelOptions?.reasoningEffort ??
-		options.modelConfiguration?.reasoningEffort ??
-		options.configuration?.reasoningEffort;
+	const configuredEffort = [
+		readThinkingEffort(options.modelOptions),
+		readThinkingEffort(options.modelConfiguration),
+		readThinkingEffort(options.configuration),
+	].find((effort) => effort !== undefined);
 
+	if (configuredEffort === undefined) {
+		return thinkingCapability.defaultEffort;
+	}
 	if (configuredEffort === 'none' && thinkingCapability.canDisable) {
 		return 'none';
 	}
-
 	if (isSupportedReasoningEffort(configuredEffort, thinkingCapability)) {
 		return configuredEffort;
 	}
+	const supported = [
+		...(thinkingCapability.canDisable ? ['none'] : []),
+		...thinkingCapability.supportedEfforts,
+	];
+	throw new Error(t('thinking.unsupported', String(configuredEffort), supported.join(', ')));
+}
 
-	return thinkingCapability.defaultEffort;
+function readThinkingEffort(configuration: Record<string, unknown> | undefined): unknown {
+	if (!configuration) return undefined;
+	const reasoning = configuration.reasoning;
+	const nestedEffort =
+		typeof reasoning === 'object' && reasoning !== null && !Array.isArray(reasoning)
+			? (reasoning as Record<string, unknown>).effort
+			: undefined;
+	return [
+		configuration.reasoningEffort,
+		nestedEffort,
+		configuration.thinkingLevel,
+		configuration['reasoning.effort'],
+	].find((effort) => effort !== undefined);
 }
 
 function buildThinkingEffortSchema(thinkingCapability: ThinkingCapability) {

@@ -1,4 +1,5 @@
 import vscode from 'vscode';
+import { isResponsesOutputItem, isResponsesReasoningItem } from '../../client/responses';
 import { safeStringify } from '../../json';
 import {
 	BASE64URL_PATTERN,
@@ -47,7 +48,13 @@ function parseReplayMarkerPart(part: unknown): ReplayMarkerParseResult | undefin
 }
 
 export function hasReplayMarkerMetadata(metadata: ReplayMarkerMetadata): boolean {
-	return Boolean(metadata.visionText || metadata.reasoningText || metadata.toolVision?.length);
+	return Boolean(
+		metadata.visionText ||
+		metadata.reasoningText ||
+		metadata.toolVision?.length ||
+		metadata.reasoningItems?.length ||
+		metadata.outputItems?.length,
+	);
 }
 
 export function createReplayMarkerPart(
@@ -57,6 +64,11 @@ export function createReplayMarkerPart(
 		...createVisionMarkerPayload(metadata.visionText),
 		...(metadata.toolVision?.length ? { toolVision: { results: metadata.toolVision } } : {}),
 		...createReasoningMarkerPayload(metadata.reasoningText),
+		...(metadata.reasoningItems?.length ? { reasoningItems: metadata.reasoningItems } : {}),
+		...(metadata.outputItems?.length ? { outputItems: metadata.outputItems } : {}),
+		...(metadata.reasoningTokens !== undefined
+			? { reasoningTokens: metadata.reasoningTokens }
+			: {}),
 	});
 	return new vscode.LanguageModelDataPart(
 		new TextEncoder().encode(`${REPLAY_MARKER_WRITER_ID}\\${payload}`),
@@ -106,13 +118,34 @@ export function parseReplayMarkerData(data: Uint8Array): ReplayMarkerParseResult
 		const vision = parseVisionMarkerMetadata(value);
 		const toolVision = parseToolVisionMarkerMetadata(value);
 		const reasoning = parseReasoningMarkerMetadata(value);
-		const hasMetadata = vision.visionText || toolVision?.length || reasoning.reasoningText;
+		const reasoningTokens = (value as { reasoningTokens?: unknown }).reasoningTokens;
+		const rawOutputItems = (value as { outputItems?: unknown }).outputItems;
+		const outputItems = Array.isArray(rawOutputItems)
+			? rawOutputItems.filter(isResponsesOutputItem)
+			: [];
+		const rawReasoningItems = (value as { reasoningItems?: unknown }).reasoningItems;
+		const reasoningItems = Array.isArray(rawReasoningItems)
+			? rawReasoningItems.filter(isResponsesReasoningItem)
+			: outputItems.filter(isResponsesReasoningItem);
+		const hasMetadata =
+			vision.visionText ||
+			toolVision?.length ||
+			reasoning.reasoningText ||
+			reasoningItems.length ||
+			outputItems.length;
 		return {
 			valid: true,
 			segmentId: segmentId.value,
 			...vision,
 			...(toolVision ? { toolVision } : {}),
 			...reasoning,
+			...(reasoningItems.length > 0 ? { reasoningItems } : {}),
+			...(outputItems.length > 0 ? { outputItems } : {}),
+			...(typeof reasoningTokens === 'number' &&
+			Number.isSafeInteger(reasoningTokens) &&
+			reasoningTokens >= 0
+				? { reasoningTokens }
+				: {}),
 			legacySegmentOnly: Boolean(segmentId.value && !hasMetadata),
 			payloadFormat: decodedPayload.format,
 		};

@@ -1,8 +1,7 @@
-DeepSeek V4 for Copilot Chat uses your own DeepSeek API key to make Flash, Pro, and Flash Vision Exp available in the model picker.
+Use the API key issued by your configured Responses provider. The default endpoint is https://gd.yundu.lol/v1/responses; confirm it in Settings before sending a request.
 
-Paste it once, then update or remove it later from the Command Palette.
+- **DeepSeek: Set API Key** stores or updates the key in VS Code SecretStorage.
+- **DeepSeek: Clear API Key** removes it.
+- The retained **DeepSeek: Get API Key** command opens DeepSeek's website, not the default third-party provider.
 
-- `Cmd/Ctrl + Shift + P`: Open the Command Palette
-- `DeepSeek: Set API Key`: Set or update your API key
-- `DeepSeek: Clear API Key`: Remove your API key
-- `DeepSeek: Get API Key`: Create a DeepSeek API key
+Do not put the key in settings.json. Existing command IDs keep the DeepSeek prefix for compatibility.

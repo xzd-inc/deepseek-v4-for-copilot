@@ -1,3 +1,5 @@
+import type { ResponsesOutputItem, ResponsesReasoningItem } from '../../types';
+
 export interface ReplayMarkerParseResult {
 	valid: boolean;
 	segmentId?: string;
@@ -6,6 +8,9 @@ export interface ReplayMarkerParseResult {
 	toolVision?: ToolVisionReplayEntry[];
 	reasoningText?: string;
 	reasoningTextIgnoredReason?: ReasoningMarkerTextIgnoredReason;
+	reasoningItems?: ResponsesReasoningItem[];
+	outputItems?: ResponsesOutputItem[];
+	reasoningTokens?: number;
 	legacySegmentOnly?: boolean;
 	payloadFormat?: ReplayMarkerPayloadFormat;
 	error?: string;
@@ -38,4 +43,7 @@ export interface ReplayMarkerMetadata {
 	visionText?: string;
 	toolVision?: readonly ToolVisionReplayEntry[];
 	reasoningText?: string;
+	reasoningItems?: readonly ResponsesReasoningItem[];
+	outputItems?: readonly ResponsesOutputItem[];
+	reasoningTokens?: number;
 }

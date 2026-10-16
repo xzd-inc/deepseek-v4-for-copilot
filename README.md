@@ -1,146 +1,98 @@
-<h1 align="center">DeepSeek V4 for Copilot Chat</h1>
+# Responses models for Copilot Chat
 
-<p align="center">
-  <!-- marketplace-readme:remove-start -->
-  <a href="https://marketplace.visualstudio.com/items?itemName=Vizards.deepseek-v4-for-copilot"><img src="https://img.shields.io/badge/VS%20Code%20Marketplace-Install-007ACC?logo=visualstudiocode&logoColor=white&style=for-the-badge" alt="Install from VS Code Marketplace"></a>
-  <a href="https://open-vsx.org/extension/Vizards/deepseek-v4-for-copilot"><img src="https://img.shields.io/badge/Open%20VSX-Install-6A4FB6?style=for-the-badge" alt="Install from Open VSX"></a>
-  <br/>
-  <!-- marketplace-readme:remove-end -->
-  <img src="https://img.shields.io/github/v/release/Vizards/deepseek-v4-for-copilot?style=for-the-badge&label=Version" alt="Version" />
-  <img src="https://vsmarketplacebadges.dev/installs-short/Vizards.deepseek-v4-for-copilot.svg?style=for-the-badge" alt="Installs" />
-</p>
+<!-- marketplace-readme:remove-start -->
+[简体中文](README.zh-cn.md) · [Changelog](CHANGELOG.md) · [MIT](LICENSE)
+<!-- marketplace-readme:remove-end -->
 
-<p align="center">
-  English |
-  <a href="https://github.com/Vizards/deepseek-v4-for-copilot/blob/main/README.zh-cn.md">简体中文</a>
-</p>
+Use an OpenAI Responses-compatible endpoint from the Copilot Chat model picker. The default is **GPT 6.1 Sol** at **https://gd.yundu.lol/v1/responses**, using your own provider API key. The extension ID, DeepSeek vendor, command IDs, and `deepseek-copilot.*` settings namespace are retained for existing integrations.
 
-**Pick DeepSeek V4 from the Copilot Chat model picker — and keep everything else Copilot already gives you.**
+The endpoint, model names, capabilities, and token bounds come from a **user-supplied `model.json` profile**. They are not independently verified public OpenAI model specifications. This provider does not guarantee parity with GitHub Copilot's built-in proprietary service, model behavior, tools, or subscription features. Endpoint availability, billing, privacy, and rate limits are controlled by your provider; no model prices are advertised here.
 
-<p align="center">
-  <img src="resources/screenshots/01-picker.png" alt="DeepSeek V4 Flash, Flash Vision Exp, and Pro in the Copilot Chat model picker, alongside the Thinking Effort menu" width="800">
-</p>
+## Setup
 
-Love DeepSeek's price-performance but don't want to give up GitHub Copilot's agent mode, tool calling, and polished UI? This extension adds **DeepSeek V4.1 Flash and other DeepSeek models** to the Copilot Chat model selector — with **native vision or Vision Proxy**, **thinking mode**, and your own API key.
+1. Use VS Code **1.116 or later** with Copilot Chat available to your account. Provider integration and some picker controls depend on VS Code/Copilot APIs and may change between releases.
+2. Install or build this extension. Its historical extension name is **DeepSeek V4 for Copilot Chat**.
+3. Review the endpoint in Settings, then run **DeepSeek: Set API Key** from the Command Palette. Enter the token issued for that endpoint. It is stored through VS Code **SecretStorage**, not in `settings.json`. Use **DeepSeek: Clear API Key** to remove it. The retained **Get API Key** command opens DeepSeek's website; it does not issue a token for the default third-party endpoint.
+4. Open Copilot Chat and select **GPT 6.1 Sol**. If hidden, open **Chat: Manage Language Models**, find the **DeepSeek** provider, and show the model. Open its model configuration to choose a reasoning effort.
 
-## Why this extension?
+No credential discovery or live endpoint verification is performed by this configuration. Review a provider before sending code, prompts, or images to it.
 
-- **Don't replace Copilot — power it up.** No new sidebar, no new chat UI to learn. Just a new model in the picker you already use.
-- **Agent mode, tool calling, instructions, MCP, skills — all of it still works.** Copilot's entire stack, now running on DeepSeek.
-- **Two ways to work with images.** V4.1 Flash and Flash Vision Exp receive image attachments natively. V4 Flash and Pro keep their existing text context while a configurable Vision Proxy turns images into descriptions.
-- **BYOK, pay DeepSeek directly.** Your API key, your bill, your rate limits. Stored in the OS keychain, never on disk.
+## Configuration
 
-## Features
-
-### DeepSeek models in the model picker
-The picker includes V4.1 Flash, V4 Pro, and entries for the legacy Flash model names, with long context, tool calling, and configurable thinking effort.
-
-### Native Vision and Vision Proxy
-Choose the image path that fits the conversation:
-
-- **DeepSeek V4.1 Flash and Flash Vision Exp** handle image attachments natively, without Vision Proxy.
-- The **DeepSeek V4 Flash and Pro** entries use Vision Proxy: an image-capable model first describes each attachment, then the main DeepSeek model receives the description with the conversation. Auto mode selects Flash Vision Exp when available, while an explicitly configured VS Code model or API endpoint remains supported.
-
-[Context caching](https://api-docs.deepseek.com/guides/kv_cache/) requires a full match with a cached prefix.
-
-<p align="center">
-  <img src="resources/screenshots/03-vision.png" alt="Dropping an image into Copilot Chat and DeepSeek responding to it via the vision proxy" width="800">
-</p>
-
-### Thinking Mode and Effort Control
-Supports DeepSeek's thinking mode and `reasoning_content`. `none` disables thinking mode; `low`, `high` (default), and `max` set the thinking effort.
-
-### Inherits Every Copilot Capability
-Because this plugs into Copilot's native provider API, you get the full stack for free:
-- **Agent mode** — autonomous multi-step tasks
-- **Tool calling** — file edits, terminal, workspace search, Git, tests
-- **Instructions & skills** — all your `.instructions.md`, `AGENTS.md`, and skills just work
-- **Prompt caching stats** — DeepSeek's cache hit rate logged in the output channel so you can see the savings
-
-<p align="center">
-  <img src="resources/screenshots/04-agent.png" alt="DeepSeek V4 Pro running Copilot's agent mode with tool calls" width="800">
-</p>
-
-### Secure by Default
-API key lives in VS Code's `SecretStorage` (OS keychain on macOS / Windows / Linux). Never in `settings.json`, never in your Git history.
-
-### Zero Runtime Dependencies
-Pure VS Code API + Node.js built-ins. No Python, no Docker, no local proxy server to babysit.
-
-## Getting Started
-
-### Prerequisites
-
-- VS Code 1.116 or later. This extension relies on non-public Copilot Chat APIs that may break on newer VS Code versions — [report an issue](https://github.com/Vizards/deepseek-v4-for-copilot/issues) if you hit one.
-- GitHub Copilot subscription (Free / Pro / Enterprise — the free tier works)
-- DeepSeek API key from [platform.deepseek.com](https://platform.deepseek.com), or a compatible provider token when using a custom `deepseek-copilot.baseUrl`
-
-### Installation
-
-Install from the registry used by your editor:
-
-1. **Microsoft VS Code** — install from [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Vizards.deepseek-v4-for-copilot).
-2. **Editors that use Open VSX** — install from [Open VSX](https://open-vsx.org/extension/Vizards/deepseek-v4-for-copilot).
-
-### Usage
-
-1. Run **DeepSeek: Set API Key** from the Command Palette (`Cmd+Shift+P`)
-2. Paste your key or compatible provider token (official DeepSeek keys usually start with `sk-`)
-3. Open Copilot Chat, click the model picker, and choose **DeepSeek V4.1 Flash** or **DeepSeek V4 Pro**
-4. That's it — chat away
-
-## Models
-
-| Model Entry | Image Handling | Thinking Effort | Official API Status |
-|---|---|---|---|
-| **DeepSeek V4.1 Flash** | Native image input | `none` / `low` / `high` / `max` | Available via `deepseek-flash` |
-| **DeepSeek V4 Pro** | Vision Proxy | `none` / `low` / `high` / `max` | API services continue; billing method unchanged |
-| **DeepSeek V4 Flash** | Vision Proxy | `none` / `low` / `high` / `max` | Model retired; legacy name still accepted |
-| **DeepSeek V4 Flash Vision Exp** | Native image input | `none` / `low` / `high` / `max` | Model retired; legacy name still accepted |
-
-On the official API, both legacy model names (`deepseek-v4-flash` and `deepseek-v4-flash-vision-exp`) route to DeepSeek-V4.1-Flash and use Flash pricing.
-
-All four entries support thinking mode, tool calling, and 1M token context. See the official [Models & Pricing](https://api-docs.deepseek.com/quick_start/pricing/) documentation for retirement, routing, and billing details.
-
-## Settings
-
-| Setting | Default | Description |
-|---|---|---|
-| `deepseek-copilot.baseUrl` | `https://api.deepseek.com` | API endpoint — change for self-hosted / proxied deployments |
-| `deepseek-copilot.requestHeaders` | `{}` | Custom headers for chat completions. [Configuration guide](https://github.com/Vizards/deepseek-v4-for-copilot/blob/main/docs/settings/request-headers.en.md) |
-| `deepseek-copilot.maxTokens` | `0` | Max output tokens (`0` = API default). Useful for cost control |
-| `deepseek-copilot.modelIdOverrides` | prefilled official ID map | API model IDs to send for each DeepSeek model entry. Change only for compatible third-party APIs with different model names |
-| `deepseek-copilot.debugMode` | `minimal` | Diagnostic mode: `minimal` for token usage only, `metadata` for privacy-preserving logs, or `verbose` for full request dumps and pipeline snapshots under extension global storage. Full dumps may include sensitive prompt text, tool schemas, file snippets, and image descriptions. Use `DeepSeek: Open Request Dumps Folder` to open the dump location |
-| `deepseek-copilot.visionModel` | *(auto)* | Vision Proxy used by V4 Flash and Pro. Auto mode selects Flash Vision Exp when available; configure another VS Code model or API endpoint with `DeepSeek: Configure Vision Proxy` |
-| `deepseek-copilot.visionPrompt` | *(built-in)* | Prompt used by V4 Flash/Pro's Vision Proxy to describe image attachments. It does not affect native V4.1 Flash or Flash Vision Exp requests |
-| `deepseek-copilot.experimental.stabilizeToolList` | `false` | Experimental. Tries to pre-activate VS Code/Copilot virtual tools so the DeepSeek API `tools` parameter is more complete and stable across turns. May improve context-cache hit rate when enabled tools change between turns. Can increase input tokens because more function definitions may be included; cache-hit input tokens are cheaper but still count toward usage. Usually leave it off with 64 or fewer enabled tools unless the tool list still changes across turns |
-
-Thinking Effort is configured from Copilot Chat's model picker for each DeepSeek model.
-
-Example `settings.json` override for compatible API proxies:
+This complete `settings.json` example reproduces the default endpoint profile:
 
 ```json
 {
-  "deepseek-copilot.modelIdOverrides": {
-    "deepseek-flash": "your-v4.1-flash-model-id",
-    "deepseek-v4-flash": "your-flash-model-id",
-    "deepseek-v4-pro": "your-pro-model-id",
-    "deepseek-v4-flash-vision-exp": "your-vision-model-id"
-  }
+  "deepseek-copilot.baseUrl": "https://gd.yundu.lol/v1/responses",
+  "deepseek-copilot.models": [
+    {
+      "id": "gpt-6.1-sol",
+      "name": "GPT 6.1 Sol",
+      "family": "gpt",
+      "version": "6.1-sol",
+      "maxInputTokens": 272000,
+      "maxOutputTokens": 64000,
+      "contextWindowTokens": 272000,
+      "toolCalling": true,
+      "imageInput": true,
+      "thinking": true,
+      "supportedReasoningEfforts": ["low", "medium", "high", "xhigh", "max"],
+      "defaultReasoningEffort": "high",
+      "canDisableReasoning": false
+    }
+  ],
+  "deepseek-copilot.maxTokens": 0,
+  "deepseek-copilot.promptCacheKey": "auto",
+  "deepseek-copilot.modelIdOverrides": {},
+  "deepseek-copilot.requestHeaders": {}
 }
 ```
 
-## Compared to alternatives
+- `models` **replaces** the selectable list; `[]` hides all models. Each entry requires an `id` and finite positive integer input/output bounds. Name, family, version, and detail are optional display metadata. Capabilities are opt-in for custom entries: declare only what that endpoint supports. `imageInput: true` means native Responses image input, without Vision Proxy.
+- The supplied profile also names `gpt-6-sol` and `gpt-5.6-sol`. To expose either, add a profile with that ID and its matching name/version, using the supplied bounds and supported efforts only if they apply to your service. Neither is enabled implicitly. Old DeepSeek model profiles are not default Responses models.
+- `modelIdOverrides` maps any picker model ID to a different API model ID, for example `{"gpt-6.1-sol": "your-deployment-id"}`. It changes only the transmitted name, not the advertised capabilities or limits.
+- `requestHeaders` adds provider-specific headers. Keep credentials in SecretStorage rather than in settings.
 
-| | This extension | Local proxy (e.g. LiteLLM) | Standalone DeepSeek extensions |
-|---|---|---|---|
-| Works inside Copilot Chat | ✅ | ✅ | ❌ separate UI |
-| Agent mode, tools, skills | ✅ | ✅ | ⚠️ reimplemented |
-| Vision support | ✅ native + proxied | ❌ | ❌ |
-| No extra process to run | ✅ | ❌ | ✅ |
-| One-click install | ✅ | ❌ | ✅ |
-| API key in OS keychain | ✅ | ❌ | ⚠️ varies |
+### Endpoint handling
 
-## License
+Whitespace and trailing slashes are removed. A URL ending in `/responses` is used directly; otherwise the client appends `/responses`. Include `/v1` yourself when your provider requires it:
 
-[MIT](LICENSE)
+| Setting | Request URL |
+|---|---|
+| `https://gd.yundu.lol/v1/responses` | `https://gd.yundu.lol/v1/responses` |
+| `https://gd.yundu.lol/v1/` | `https://gd.yundu.lol/v1/responses` |
+| `https://api.openai.com/v1` | `https://api.openai.com/v1/responses` |
+
+Changing the host does not make a model ID valid there. Configure the model IDs and capabilities supported by that service. The main provider sends **Responses only**; a Chat Completions endpoint or an old DeepSeek API address is not a protocol fallback. URLs must use HTTP(S) without embedded credentials, queries, or fragments.
+
+### Context and output limits
+
+The supplied profile declares `maxInputTokens: 272000` and `maxOutputTokens: 64000`. Because **272,000 is treated as the total input-plus-output context bound**, `contextWindowTokens` is also set to 272,000. Reserving the default 64,000 output allowance yields a **208,000-token input budget** in the picker, not 272,000 input plus 64,000 output.
+
+`maxTokens: 0` uses the model's output bound. A positive integer further caps output and cannot increase it above the profile limit. For example, `maxTokens: 16000` advertises 16,000 output and at most 256,000 input for this context window. Model and output-limit changes refresh the picker. For other services, set `contextWindowTokens` to their total context bound; omit it only when the service's input and output limits are independently usable. Token estimation is not an authoritative tokenizer, and the backend can impose smaller limits, including reasoning or image token overhead.
+
+### Reasoning effort
+
+The supplied profile enables `low`, `medium`, `high`, `xhigh`, and `max`, with **high** as its default. Select an effort from the model picker, or change `defaultReasoningEffort` in that model's settings. A custom profile must list its supported efforts and choose a default from that list. Unsupported explicit effort values fail clearly rather than silently falling back or escalating.
+
+Request integrations can provide `modelOptions.reasoningEffort`; nested `modelOptions.reasoning.effort` and `thinkingLevel` are accepted compatibility aliases. Legacy `modelConfiguration` and `configuration` options remain readable. Request-scoped `modelOptions` take precedence.
+
+The default profile does **not** offer `none`. Set `canDisableReasoning: true` only if the backend explicitly supports disabling reasoning. Effort labels describe request options; they do not guarantee quality or latency.
+
+### Cache key and stateless replay
+
+`promptCacheKey: "auto"` derives a stable key from the model ID and a hash of the system prefix, without sending prompt plaintext as the key. A custom string is sent as `prompt_cache_key`; an empty string `""` omits that field. Cache availability, retention, hits, and billing depend on the backend. A key does not guarantee a cache hit or lower cost.
+
+Responses requests use `store: false` and request encrypted reasoning content. The full ordered Responses output item list—including encrypted reasoning items, assistant messages, and function calls—is saved in conversation replay metadata, not just the displayed reasoning summary. Replay preserves reasoning placement relative to assistant messages and function calls, with tool results supplied as function-call outputs, so later turns can continue without relying on a server-side `previous_response_id`. This requires the endpoint to return and accept compatible encrypted reasoning items. Editing history, switching endpoints/models, or losing host replay metadata can interrupt continuity; start a new conversation if necessary. Encryption of reasoning content does not make the rest of the conversation private from the endpoint.
+
+## Compatibility and diagnostics
+
+Native image and function-tool requests are enabled by the supplied profile. Copilot controls which tools, instructions, MCP integrations, and agent UI are available; this extension cannot reproduce every built-in provider feature or guarantee that every tool workflow works identically. It has no runtime package dependencies or separate proxy process.
+
+`deepseek-copilot.debugMode` defaults to `minimal`. `metadata` adds diagnostic metadata; review it before sharing. `verbose` writes full local request dumps that may contain prompts, source code, images, tool schemas, and replay state. Open them with **DeepSeek: Open Request Dumps Folder**. Use **DeepSeek: Show Logs** for diagnostics.
+
+The Vision Proxy commands/settings are retained for compatibility; native-image profiles do not need them. `experimental.stabilizeToolList` remains disabled by default; it may add input tokens and internal preflight calls, and backend cache improvements are not guaranteed.
+
+## Development
+
+Use Node.js **24 or later**. Run `npm ci`, `npm run compile`, and `npm test`. Existing `lint`, `format`, and `format:check` scripts remain available. `npm run vscode:prepublish` prepares the marketplace README and compiles; `npm run package` creates a VSIX in `dist/`.

@@ -1,5 +1,5 @@
 import vscode from 'vscode';
-import { REPLAY_MARKER_MIME } from './replay';
+import { parseReplayMarkerData, REPLAY_MARKER_MIME } from './replay';
 
 const IMAGE_PART_FIXED_TOKENS = 384;
 
@@ -49,10 +49,17 @@ function estimatePartTokens(part: unknown): PartTokenEstimate {
 	if (part instanceof vscode.LanguageModelDataPart) {
 		const mime = part.mimeType;
 		if (mime === REPLAY_MARKER_MIME) {
-			// Marker metadata is not sent as assistant content. Its vision text belongs
-			// logically to a previous user image message, but provideTokenCount only
-			// receives one message at a time and cannot safely bind history here.
-			return { textChars: 0, fixedTokens: 0 };
+			const marker = parseReplayMarkerData(part.data);
+			if (!marker.valid) {
+				return { textChars: 0, fixedTokens: 0 };
+			}
+			// Opaque reasoning also consumes context; prefer the server's token usage.
+			const encryptedChars =
+				marker.reasoningItems?.reduce(
+					(total, item) => total + (item.encrypted_content?.length ?? 0),
+					0,
+				) ?? 0;
+			return { textChars: 0, fixedTokens: marker.reasoningTokens ?? Math.ceil(encryptedChars / 4) };
 		}
 
 		// Keep image estimation conservative and independent from charsPerToken

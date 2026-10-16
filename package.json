@@ -1,7 +1,7 @@
 {
   "name": "deepseek-v4-for-copilot",
   "displayName": "DeepSeek V4 for Copilot Chat",
-  "description": "Use DeepSeek V4.1 Flash in Copilot Chat with native vision, Vision Proxy, reasoning, and agent tools.",
+  "description": "Use configurable OpenAI Responses models in Copilot Chat, with a user-supplied GPT 6.1 Sol endpoint profile.",
   "icon": "resources/icon.png",
   "version": "0.9.4",
   "publisher": "Vizards",
@@ -32,7 +32,10 @@
     "thinking",
     "reasoning",
     "ai",
-    "chat"
+    "chat",
+    "openai",
+    "responses",
+    "gpt-6.1-sol"
   ],
   "activationEvents": [
     "onUri",
@@ -122,11 +125,11 @@
       "properties": {
         "deepseek-copilot.baseUrl": {
           "type": "string",
-          "default": "https://api.deepseek.com",
+          "default": "https://gd.yundu.lol/v1/responses",
           "markdownDescription": "%deepseek-copilot.config.baseUrl.description%"
         },
         "deepseek-copilot.maxTokens": {
-          "type": "number",
+          "type": "integer",
           "default": 0,
           "minimum": 0,
           "description": "%deepseek-copilot.config.maxTokens.description%"
@@ -149,32 +152,11 @@
         },
         "deepseek-copilot.modelIdOverrides": {
           "type": "object",
-          "default": {
-            "deepseek-flash": "deepseek-flash",
-            "deepseek-v4-flash": "deepseek-v4-flash",
-            "deepseek-v4-pro": "deepseek-v4-pro",
-            "deepseek-v4-flash-vision-exp": "deepseek-v4-flash-vision-exp"
+          "default": {},
+          "additionalProperties": {
+            "type": "string"
           },
-          "description": "%deepseek-copilot.config.modelIdOverrides.description%",
-          "additionalProperties": false,
-          "properties": {
-            "deepseek-flash": {
-              "type": "string",
-              "description": "%deepseek-copilot.config.modelIdOverrides.deepseek-flash.description%"
-            },
-            "deepseek-v4-flash": {
-              "type": "string",
-              "description": "%deepseek-copilot.config.modelIdOverrides.deepseek-v4-flash.description%"
-            },
-            "deepseek-v4-pro": {
-              "type": "string",
-              "description": "%deepseek-copilot.config.modelIdOverrides.deepseek-v4-pro.description%"
-            },
-            "deepseek-v4-flash-vision-exp": {
-              "type": "string",
-              "description": "%deepseek-copilot.config.modelIdOverrides.deepseek-v4-flash-vision-exp.description%"
-            }
-          }
+          "description": "%deepseek-copilot.config.modelIdOverrides.description%"
         },
         "deepseek-copilot.visionModel": {
           "type": "string",
@@ -209,6 +191,125 @@
             "%deepseek-copilot.config.debugMode.verbose.description%"
           ],
           "markdownDescription": "%deepseek-copilot.config.debugMode.description%"
+        },
+        "deepseek-copilot.promptCacheKey": {
+          "type": "string",
+          "default": "auto",
+          "markdownDescription": "%deepseek-copilot.config.promptCacheKey.description%"
+        },
+        "deepseek-copilot.models": {
+          "type": "array",
+          "default": [
+            {
+              "id": "gpt-6.1-sol",
+              "name": "GPT 6.1 Sol",
+              "family": "gpt",
+              "version": "6.1-sol",
+              "maxInputTokens": 272000,
+              "maxOutputTokens": 64000,
+              "contextWindowTokens": 272000,
+              "toolCalling": true,
+              "imageInput": true,
+              "thinking": true,
+              "supportedReasoningEfforts": [
+                "low",
+                "medium",
+                "high",
+                "xhigh",
+                "max"
+              ],
+              "defaultReasoningEffort": "high",
+              "canDisableReasoning": false
+            }
+          ],
+          "markdownDescription": "%deepseek-copilot.config.models.description%",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "maxInputTokens",
+              "maxOutputTokens"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "family": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "string",
+                "minLength": 1
+              },
+              "detail": {
+                "type": "string",
+                "minLength": 1
+              },
+              "maxInputTokens": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "maxOutputTokens": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "contextWindowTokens": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "%deepseek-copilot.config.models.contextWindowTokens.description%"
+              },
+              "toolCalling": {
+                "type": "boolean",
+                "default": false
+              },
+              "imageInput": {
+                "type": "boolean",
+                "default": false
+              },
+              "thinking": {
+                "type": "boolean",
+                "default": false
+              },
+              "supportedReasoningEfforts": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high",
+                    "xhigh",
+                    "max"
+                  ]
+                }
+              },
+              "defaultReasoningEffort": {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ],
+                "default": "high"
+              },
+              "canDisableReasoning": {
+                "type": "boolean",
+                "default": false,
+                "description": "%deepseek-copilot.config.models.canDisableReasoning.description%"
+              }
+            }
+          }
         }
       }
     }
@@ -222,7 +323,8 @@
     "format": "oxfmt --write src/",
     "format:check": "oxfmt --check src/",
     "package": "vsce package --readme-path dist/README.marketplace.md -o dist/",
-    "login": "vsce login Vizards"
+    "login": "vsce login Vizards",
+    "test": "npm run compile && node --test test/*.test.cjs"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",

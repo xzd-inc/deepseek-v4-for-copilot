@@ -1,12 +1,9 @@
-## 稳定工具列表（实验性）
+在 **deepseek-copilot** 设置中配置 Responses 地址、模型、输出上限和提示词缓存键。
 
-先打开 VS Code 的 Tools 配置，查看当前聊天启用了多少个工具。
+- 默认地址为 https://gd.yundu.lol/v1/responses。完整 /responses 地址直接使用，基础地址追加 /responses，需要 /v1 时请自行包含。
+- 模型配置替换默认列表，只应启用端点明确支持的能力和思考强度。
+- 用户配置的上下文合计限制是 272,000，预留 64,000 输出后输入预算是 208,000。更低的 maxTokens 会改变选择器中的两个生效额度。
+- promptCacheKey 默认 auto，空字符串表示不发送缓存键，命中与计费取决于服务。
+- 实验性稳定工具列表默认关闭，可能增加输入令牌和内部工具调用。
 
-[配置 Tools](command:workbench.action.chat.configureTools)
-
-- 64 个或更少已启用工具：通常无需开启，除非工具列表仍在跨轮次变化。
-- 超过 64 个已启用工具：仅在工具列表跨轮次变化、DeepSeek 上下文缓存命中率不理想时，再考虑开启。工具列表越大，包含的函数定义越多，input tokens 也可能增加。
-
-这个设置可能通过让 DeepSeek API 的 `tools` 参数在多轮对话中更完整、更稳定来提高缓存命中率。代价是每次请求可能包含更多函数工具定义，因此 input tokens 可能增加。
-
-[打开插件设置](command:workbench.action.openSettings?%5B%22%40id%3Adeepseek-copilot.experimental.stabilizeToolList%22%5D)
+[打开设置](command:deepseek-copilot.openSettings)

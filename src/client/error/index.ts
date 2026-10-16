@@ -307,10 +307,11 @@ function getRequestDiagnosticMessage(context: RequestErrorContext): string {
 		`stream=${request.stream}`,
 		request.temperature !== undefined ? `temperature=${request.temperature}` : undefined,
 		request.top_p !== undefined ? `topP=${request.top_p}` : undefined,
-		request.max_tokens !== undefined ? `maxTokens=${request.max_tokens}` : undefined,
-		request.thinking?.type ? `thinking=${safeStringify(request.thinking.type)}` : undefined,
-		request.reasoning_effort
-			? `reasoningEffort=${safeStringify(request.reasoning_effort)}`
+		request.max_output_tokens !== undefined
+			? `maxOutputTokens=${request.max_output_tokens}`
+			: undefined,
+		request.reasoning?.effort
+			? `reasoningEffort=${safeStringify(request.reasoning.effort)}`
 			: undefined,
 		request.tool_choice ? `toolChoice=${safeStringify(request.tool_choice)}` : undefined,
 		`toolCount=${request.tools?.length ?? 0}`,

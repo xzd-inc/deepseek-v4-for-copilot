@@ -1,8 +1,7 @@
-DeepSeek V4 for Copilot Chat 使用你自己的 DeepSeek API Key，让 Flash、Pro 和 Flash Vision Exp 模型出现在模型选择器中。
+使用所配置 Responses 服务商签发的 API Key。默认端点是 https://gd.yundu.lol/v1/responses；发送请求前请在设置中确认地址。
 
-只需粘贴一次，之后可通过命令面板更新或移除。
+- **DeepSeek: 设置 API Key** 通过 VS Code SecretStorage 保存或更新密钥。
+- **DeepSeek: 清除 API Key** 删除密钥。
+- 保留的 **DeepSeek: 获取 API Key** 命令打开 DeepSeek 网站，并非默认第三方服务商。
 
-- `Cmd/Ctrl + Shift + P`：打开命令面板
-- `DeepSeek: 设置 API Key`：设置或更新 API Key
-- `DeepSeek: 清除 API Key`：移除 API Key
-- `DeepSeek: 获取 API Key`：创建 DeepSeek API Key
+不要将密钥写进 settings.json。现有命令 ID 保留 DeepSeek 前缀以兼容既有集成。

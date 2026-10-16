@@ -1,7 +1,11 @@
 import vscode from 'vscode';
 import { AuthManager } from '../auth';
-import { getApiModelId, getBaseUrl, getStabilizeToolListEnabled } from '../config';
-import { MODELS } from '../consts';
+import {
+	getApiModelId,
+	getBaseUrl,
+	getConfiguredModels,
+	getStabilizeToolListEnabled,
+} from '../config';
 import { isOfficialDeepSeekBaseUrl, normalizeBaseUrl } from '../endpoint';
 import { t } from '../i18n';
 import { logger } from '../logger';
@@ -65,7 +69,11 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
 					e.affectsConfiguration('deepseek-copilot.baseUrl')
 				) {
 					this.invalidateCurrencyAndRefreshModels();
-				} else if (e.affectsConfiguration('deepseek-copilot.modelIdOverrides')) {
+				} else if (
+					e.affectsConfiguration('deepseek-copilot.modelIdOverrides') ||
+					e.affectsConfiguration('deepseek-copilot.models') ||
+					e.affectsConfiguration('deepseek-copilot.maxTokens')
+				) {
 					this.refreshModelPicker();
 				}
 			}),
@@ -138,7 +146,7 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
 		if (hasKey) {
 			this.balanceCurrencyResolver.refreshInBackground();
 		}
-		return MODELS.map((model) =>
+		return getConfiguredModels().map((model) =>
 			toChatInfo(
 				model,
 				hasKey,

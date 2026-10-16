@@ -1,10 +1,20 @@
+import { isDeepStrictEqual } from 'node:util';
 import vscode from 'vscode';
+import { getResponseText } from '../client/responses';
+import { LANGUAGE_MODEL_CHAT_SYSTEM_ROLE } from '../consts';
 import { safeStringify } from '../json';
 import type {
 	DeepSeekContentPart,
 	DeepSeekMessage,
 	DeepSeekTool,
 	DeepSeekToolCall,
+	ResponsesFunctionCallItem,
+	ResponsesFunctionCallOutputItem,
+	ResponsesInputItem,
+	ResponsesInputTextPart,
+	ResponsesInputImagePart,
+	ResponsesMessageItem,
+	ResponsesReasoningItem,
 } from '../types';
 import { parseFirstReplayMarker } from './replay';
 import {
@@ -66,8 +76,9 @@ export function convertMessages(
 		}
 
 		if (role === 'assistant') {
-			if (content || toolCalls.length > 0) {
-				const replayMarker = isThinkingModel ? parseFirstReplayMarker(message) : undefined;
+			const replayMarker = parseFirstReplayMarker(message);
+			const replayReasoningItems = replayMarker?.valid ? replayMarker.reasoningItems : undefined;
+			if (content || toolCalls.length > 0 || thinkingContent || replayReasoningItems?.length) {
 				const msg: DeepSeekMessage = {
 					role: 'assistant' as const,
 					content: content || '',
@@ -77,8 +88,27 @@ export function convertMessages(
 					msg.tool_calls = toolCalls;
 				}
 
-				if (isThinkingModel) {
+				if (isThinkingModel || thinkingContent || replayReasoningItems?.length) {
 					msg.reasoning_content = getReasoningContent(replayMarker, thinkingContent);
+				}
+				if (replayReasoningItems?.length) {
+					msg.responsesReasoningItems = replayReasoningItems;
+				}
+				if (replayMarker?.valid && replayMarker.outputItems?.length) {
+					const output = replayMarker.outputItems;
+					const calls = output.filter((item) => item.type === 'function_call');
+					const text = output
+						.filter((item) => item.type === 'message')
+						.map((item) => getResponseText(item.content))
+						.join('');
+					// Only replay canonical output while it still matches the visible history.
+					if (
+						text === content &&
+						calls.length === toolCalls.length &&
+						calls.every((call, i) => matchesToolCall(call, toolCalls[i]))
+					) {
+						msg.responsesOutputItems = output;
+					}
 				}
 
 				result.push(msg);
@@ -89,9 +119,9 @@ export function convertMessages(
 					role: 'user',
 					content: nativeVisionContentParts,
 				});
-			} else if (content) {
+			} else if (content || role === 'system') {
 				result.push({
-					role: role as 'user' | 'assistant',
+					role,
 					content: content,
 				});
 			}
@@ -108,6 +138,18 @@ export function convertMessages(
 	}
 
 	return result;
+}
+
+function matchesToolCall(item: ResponsesFunctionCallItem, call: DeepSeekToolCall): boolean {
+	try {
+		return (
+			item.call_id === call.id &&
+			item.name === call.function.name &&
+			isDeepStrictEqual(JSON.parse(item.arguments), JSON.parse(call.function.arguments))
+		);
+	} catch {
+		return false;
+	}
 }
 
 function toImageDataUrl(part: { mimeType: string; data: Uint8Array }): string {
@@ -171,14 +213,14 @@ function normalizeThinkingPartText(value: string | string[]): string {
 	return Array.isArray(value) ? value.join('') : value;
 }
 
-function mapRole(role: vscode.LanguageModelChatMessageRole): 'user' | 'assistant' {
+function mapRole(role: vscode.LanguageModelChatMessageRole): 'user' | 'assistant' | 'system' {
 	switch (role) {
 		case vscode.LanguageModelChatMessageRole.User:
 			return 'user';
 		case vscode.LanguageModelChatMessageRole.Assistant:
 			return 'assistant';
 		default:
-			return 'user';
+			return role === LANGUAGE_MODEL_CHAT_SYSTEM_ROLE ? 'system' : 'user';
 	}
 }
 
@@ -207,6 +249,101 @@ export function convertTools(
 }
 
 /**
+ * Convert the internal history into the item list expected by the Responses API.
+ * Reasoning items are inserted before the assistant message or function calls that
+ * followed them, preserving the output order required by reasoning models.
+ */
+export function convertResponsesInput(messages: readonly DeepSeekMessage[]): ResponsesInputItem[] {
+	const input: ResponsesInputItem[] = [];
+
+	for (const message of messages) {
+		if (message.responsesOutputItems?.length) {
+			input.push(...structuredClone(message.responsesOutputItems));
+			continue;
+		}
+		if (message.responsesReasoningItems?.length) {
+			input.push(...message.responsesReasoningItems.map(cloneReasoningItem));
+		}
+
+		if (message.role === 'tool') {
+			if (message.tool_call_id) {
+				input.push({
+					type: 'function_call_output',
+					call_id: message.tool_call_id,
+					output: convertFunctionCallOutput(message.content),
+				});
+			}
+			continue;
+		}
+
+		const hasContent =
+			(typeof message.content === 'string' && message.content.length > 0) ||
+			(Array.isArray(message.content) && message.content.length > 0);
+		if (hasContent) {
+			input.push({
+				type: 'message',
+				role: message.role,
+				content: convertMessageContent(message),
+			} satisfies ResponsesMessageItem);
+		}
+
+		for (const toolCall of message.tool_calls ?? []) {
+			input.push({
+				type: 'function_call',
+				call_id: toolCall.id,
+				name: toolCall.function.name,
+				arguments: toolCall.function.arguments,
+			} satisfies ResponsesFunctionCallItem);
+		}
+	}
+
+	return input;
+}
+
+function cloneReasoningItem(item: ResponsesReasoningItem): ResponsesReasoningItem {
+	return {
+		...item,
+		...(item.summary ? { summary: item.summary.map((part) => ({ ...part })) } : {}),
+	};
+}
+
+function convertMessageContent(message: DeepSeekMessage): ResponsesMessageItem['content'] {
+	const outputText = message.role === 'assistant';
+	if (typeof message.content === 'string') {
+		return [{ type: outputText ? 'output_text' : 'input_text', text: message.content }];
+	}
+
+	return message.content.map((part) => {
+		if (part.type === 'text') {
+			return { type: outputText ? 'output_text' : 'input_text', text: part.text };
+		}
+		return {
+			type: 'input_image',
+			image_url: part.image_url.url,
+			detail: 'auto',
+		};
+	});
+}
+
+function convertFunctionCallOutput(
+	content: DeepSeekMessage['content'],
+): ResponsesFunctionCallOutputItem['output'] {
+	if (typeof content === 'string') {
+		return content;
+	}
+
+	const output: (ResponsesInputTextPart | ResponsesInputImagePart)[] = [];
+	for (const part of content) {
+		if (part.type === 'text') {
+			output.push({ type: 'input_text', text: part.text });
+		} else {
+			output.push({ type: 'input_image', image_url: part.image_url.url, detail: 'auto' });
+		}
+	}
+	return output.length > 0 ? output : '';
+}
+
+/**
  * Count total characters across all messages to calibrate chars-per-token ratio.
  */
 export function countMessageChars(messages: DeepSeekMessage[]): number {
@@ -218,6 +355,11 @@ export function countMessageChars(messages: DeepSeekMessage[]): number {
 			for (const tc of msg.tool_calls) {
 				total += tc.function?.name?.length ?? 0;
 				total += tc.function?.arguments?.length ?? 0;
+			}
+		}
+		for (const item of msg.responsesReasoningItems ?? []) {
+			for (const summary of item.summary ?? []) {
+				total += summary.text.length;
 			}
 		}
 	}

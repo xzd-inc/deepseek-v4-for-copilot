@@ -45,130 +45,27 @@ export const WALKTHROUGH_ID = 'Vizards.deepseek-v4-for-copilot#deepseekGettingSt
 
 // ---- Model registry ----
 
-/** Available DeepSeek models exposed through the language model provider. */
-export const MODELS: ModelDefinition[] = [
+/** User-supplied endpoint profile, not independently verified public model specifications. */
+export const MODELS: (ModelDefinition & { contextWindowTokens?: number })[] = [
 	{
-		id: 'deepseek-flash',
-		name: 'DeepSeek V4.1 Flash',
-		family: 'deepseek',
-		version: 'v4.1',
-		detail: 'Vision and thinking mode',
-		maxInputTokens: 655360,
-		maxOutputTokens: 393216,
+		id: 'gpt-6.1-sol',
+		name: 'GPT 6.1 Sol',
+		family: 'gpt',
+		version: '6.1-sol',
+		detail: 'User-supplied Responses endpoint profile',
+		maxInputTokens: 272000,
+		maxOutputTokens: 64000,
+		contextWindowTokens: 272000,
 		capabilities: {
 			toolCalling: true,
 			imageInput: true,
 			nativeImageInput: true,
 			thinking: {
-				supportedEfforts: ['low', 'high', 'max'],
+				supportedEfforts: ['low', 'medium', 'high', 'xhigh', 'max'],
 				defaultEffort: 'high',
-				canDisable: true,
+				canDisable: false,
 			},
 		},
-		requiresThinkingParam: true,
-		pricing: {
-			USD: {
-				offPeak: { cacheHitInput: 0.003, cacheMissInput: 0.15, output: 0.6 },
-				peak: { cacheHitInput: 0.006, cacheMissInput: 0.3, output: 1.2 },
-			},
-			CNY: {
-				offPeak: { cacheHitInput: 0.02, cacheMissInput: 1, output: 4 },
-				peak: { cacheHitInput: 0.04, cacheMissInput: 2, output: 8 },
-			},
-		},
-		priceCategory: 'low',
-	},
-	{
-		id: 'deepseek-v4-flash',
-		name: 'DeepSeek V4 Flash',
-		family: 'deepseek',
-		version: 'v4',
-		detail: 'Fast, general-purpose model',
-		maxInputTokens: 655360,
-		maxOutputTokens: 393216,
-		capabilities: {
-			toolCalling: true,
-			imageInput: true,
-			nativeImageInput: false,
-			thinking: {
-				supportedEfforts: ['low', 'high', 'max'],
-				defaultEffort: 'high',
-				canDisable: true,
-			},
-		},
-		requiresThinkingParam: true,
-		pricing: {
-			USD: {
-				offPeak: { cacheHitInput: 0.007, cacheMissInput: 0.22, output: 0.66 },
-				peak: { cacheHitInput: 0.014, cacheMissInput: 0.44, output: 1.32 },
-			},
-			CNY: {
-				offPeak: { cacheHitInput: 0.05, cacheMissInput: 1.5, output: 4.5 },
-				peak: { cacheHitInput: 0.1, cacheMissInput: 3, output: 9 },
-			},
-		},
-		priceCategory: 'low',
-	},
-	{
-		id: 'deepseek-v4-pro',
-		name: 'DeepSeek V4 Pro',
-		family: 'deepseek',
-		version: 'v4',
-		detail: 'Most capable reasoning model',
-		maxInputTokens: 655360,
-		maxOutputTokens: 393216,
-		capabilities: {
-			toolCalling: true,
-			imageInput: true,
-			nativeImageInput: false,
-			thinking: {
-				supportedEfforts: ['low', 'high', 'max'],
-				defaultEffort: 'high',
-				canDisable: true,
-			},
-		},
-		requiresThinkingParam: true,
-		pricing: {
-			USD: {
-				offPeak: { cacheHitInput: 0.022, cacheMissInput: 0.66, output: 1.98 },
-				peak: { cacheHitInput: 0.044, cacheMissInput: 1.32, output: 3.96 },
-			},
-			CNY: {
-				offPeak: { cacheHitInput: 0.15, cacheMissInput: 4.5, output: 13.5 },
-				peak: { cacheHitInput: 0.3, cacheMissInput: 9, output: 27 },
-			},
-		},
-		priceCategory: 'low',
-	},
-	{
-		id: 'deepseek-v4-flash-vision-exp',
-		name: 'DeepSeek V4 Flash Vision Exp',
-		family: 'deepseek',
-		version: 'v4',
-		detail: 'Experimental native vision model',
-		maxInputTokens: 655360,
-		maxOutputTokens: 393216,
-		capabilities: {
-			toolCalling: true,
-			imageInput: true,
-			nativeImageInput: true,
-			thinking: {
-				supportedEfforts: ['low', 'high', 'max'],
-				defaultEffort: 'high',
-				canDisable: true,
-			},
-		},
-		requiresThinkingParam: true,
-		pricing: {
-			USD: {
-				offPeak: { cacheHitInput: 0.007, cacheMissInput: 0.22, output: 0.66 },
-				peak: { cacheHitInput: 0.014, cacheMissInput: 0.44, output: 1.32 },
-			},
-			CNY: {
-				offPeak: { cacheHitInput: 0.05, cacheMissInput: 1.5, output: 4.5 },
-				peak: { cacheHitInput: 0.1, cacheMissInput: 3, output: 9 },
-			},
-		},
-		priceCategory: 'low',
+		requiresThinkingParam: false,
 	},
 ];

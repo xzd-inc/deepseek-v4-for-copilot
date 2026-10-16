@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Switch the main provider to OpenAI Responses with a configurable model registry and a user-supplied GPT 6.1 Sol endpoint profile at `https://gd.yundu.lol/v1/responses`.
+- Replace the default DeepSeek profiles and pricing with native-image/tool capability metadata and per-model `low`, `medium`, `high`, `xhigh`, and `max` reasoning efforts, defaulting to `high`. Unsupported explicit efforts fail rather than silently falling back.
+- Add configurable prompt cache keys and input/output bounds. The supplied 272,000-token total context reserves 64,000 output tokens, leaving a 208,000-token default input budget; output caps are reflected in the picker.
+- Preserve the extension, vendor, command, and settings namespaces; retain API keys in VS Code SecretStorage. Add bilingual Responses setup and stateless encrypted reasoning replay documentation, without claims of built-in Copilot service parity or verified public model specifications.
+- Add `npm test` to compile and run the local Node.js test suite.
+
 ## [0.9.4](https://github.com/Vizards/deepseek-v4-for-copilot/compare/v0.9.3...v0.9.4) (2026-10-07)
 
 

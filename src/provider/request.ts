@@ -1,11 +1,17 @@
+import { createHash } from 'crypto';
 import vscode from 'vscode';
 import { AuthManager } from '../auth';
 import { createApiKeyNotConfiguredError, DeepSeekClient } from '../client';
-import { getApiModelId, getBaseUrl, getMaxTokens, getRequestHeaders } from '../config';
-import { MODELS } from '../consts';
-import { isOfficialDeepSeekBaseUrl } from '../endpoint';
+import {
+	getApiModelId,
+	getBaseUrl,
+	getConfiguredModels,
+	getMaxTokens,
+	getPromptCacheKey,
+	getRequestHeaders,
+} from '../config';
 import type { DeepSeekRequest } from '../types';
-import { convertMessages, countMessageChars } from './convert';
+import { convertMessages, convertResponsesInput, countMessageChars } from './convert';
 import {
 	dumpDeepSeekRequest,
 	type CacheDiagnosticsRecorder,
@@ -14,7 +20,7 @@ import {
 import { resolveRequestHeaders } from './headers';
 import { getConfiguredThinkingEffort, type ModelConfigurationOptions } from './models';
 import type { ReplayMarkerMetadata } from './replay';
-import { classifyDeepSeekRequest, shouldForceThinkingNone, type RequestKind } from './routing';
+import { classifyDeepSeekRequest, type RequestKind } from './routing';
 import type { ConversationSegment } from './segment';
 import { collectTrailingToolResultIds, prepareRequestTools } from './tools/request';
 import {
@@ -71,11 +77,21 @@ export async function prepareChatRequest({
 	const baseUrl = getBaseUrl();
 	const requestHeaders = resolveRequestHeaders(getRequestHeaders(), options, storageUri);
 	const client = new DeepSeekClient(baseUrl, apiKey, requestHeaders);
-	const modelDef = MODELS.find((m) => m.id === modelInfo.id);
-	const thinkingCapability = modelDef?.capabilities.thinking;
+	const modelDef = getConfiguredModels().find((m) => m.id === modelInfo.id);
+	if (!modelDef) {
+		throw new Error(
+			`Responses model "${modelInfo.id}" is no longer configured; select a configured model.`,
+		);
+	}
+	const thinkingCapability = modelDef.capabilities.thinking;
 	const isThinkingModel = Boolean(thinkingCapability);
 	const nativeImageInput = modelDef?.capabilities.nativeImageInput === true;
-	const maxTokens = getMaxTokens();
+	const configuredMaxTokens = getMaxTokens();
+	const maxTokens = Math.min(
+		configuredMaxTokens ?? modelDef.maxOutputTokens,
+		modelDef.maxOutputTokens,
+		modelInfo.maxOutputTokens,
+	);
 	const visionResolution = await prepareVisionMessages({
 		messages,
 		nativeImageInput,
@@ -95,36 +111,32 @@ export async function prepareChatRequest({
 		visionResolution.stats.input.forwardedImageParts +
 			visionResolution.stats.tool.forwardedImageParts >
 			0;
+	const apiModelId = getApiModelId(modelInfo.id);
 	const baseRequest: DeepSeekRequest = {
-		model: getApiModelId(modelInfo.id),
+		model: apiModelId,
 		messages: deepseekMessages,
+		input: convertResponsesInput(deepseekMessages),
 		stream: true,
 		tools,
-		tool_choice: tools && tools.length > 0 ? ('auto' as const) : undefined,
-		max_tokens: maxTokens,
+		tool_choice:
+			tools && tools.length > 0
+				? options.toolMode === vscode.LanguageModelChatToolMode.Required
+					? 'required'
+					: 'auto'
+				: undefined,
+		max_output_tokens: maxTokens,
+		prompt_cache_key: resolvePromptCacheKey(apiModelId, deepseekMessages, options),
 	};
 	const requestKind = classifyDeepSeekRequest({
 		request: baseRequest,
 		inputMessages: messages,
 	});
-	const configuredThinkingEffort = thinkingCapability
+	const thinkingEffort = thinkingCapability
 		? getConfiguredThinkingEffort(options as ModelConfigurationOptions, thinkingCapability)
 		: 'none';
-	// Only force helper requests into disabled thinking on the official API.
-	// Custom endpoints keep their configured effort to preserve pre-#137 request shape.
-	const forceNoneThinking =
-		shouldForceThinkingNone(requestKind) && isOfficialDeepSeekBaseUrl(baseUrl);
-	const thinkingEffort = forceNoneThinking ? 'none' : configuredThinkingEffort;
 	const request: DeepSeekRequest = {
 		...baseRequest,
-		...(isThinkingModel
-			? {
-					thinking: {
-						type: thinkingEffort === 'none' ? ('disabled' as const) : ('enabled' as const),
-					},
-					...(thinkingEffort === 'none' ? {} : { reasoning_effort: thinkingEffort }),
-				}
-			: {}),
+		...(thinkingCapability ? { reasoning: { effort: thinkingEffort } } : {}),
 	};
 	dumpDeepSeekRequest(request, {
 		globalStorageUri,
@@ -171,4 +183,30 @@ export async function prepareChatRequest({
 		visionMarkerTextChars: visionResolution.stats.markerVisionTextChars || undefined,
 		initialResponseNotice: visionResolution.initialResponseNotice,
 	};
+}
+
+function resolvePromptCacheKey(
+	modelId: string,
+	messages: DeepSeekRequest['messages'],
+	options: vscode.ProvideLanguageModelChatResponseOptions,
+): string | undefined {
+	const requestKey = options.modelOptions?.prompt_cache_key ?? options.modelOptions?.promptCacheKey;
+	if (typeof requestKey === 'string' && requestKey.trim()) {
+		return requestKey.trim();
+	}
+
+	const configured = getPromptCacheKey();
+	if (configured === '') {
+		return undefined;
+	}
+	if (configured !== 'auto') {
+		return configured;
+	}
+
+	// A stable non-identifying key improves routing without sending prompt text as a key.
+	const prefix = messages.find((message) => message.role === 'system')?.content ?? '';
+	return `copilot-${createHash('sha256')
+		.update(`${modelId}:${JSON.stringify(prefix)}`)
+		.digest('hex')
+		.slice(0, 56)}`;
 }

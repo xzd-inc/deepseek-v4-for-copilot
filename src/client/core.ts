@@ -1,19 +1,12 @@
 import type { CancellationToken } from 'vscode';
 import { safeStringify } from '../json';
 import { logger } from '../logger';
-import type {
-	DeepSeekRequest,
-	DeepSeekStreamChunk,
-	DeepSeekToolCall,
-	DeepSeekUsage,
-	StreamCallbacks,
-} from '../types';
+import type { DeepSeekRequest, StreamCallbacks } from '../types';
 import { createHttpError, formatRequestError, normalizeRequestError } from './error';
+import { ResponsesStreamProcessor } from './responseStream';
+import { parseResponsesEvent, parseResponsesSseBlock } from './responses';
 
-/**
- * Lightweight SSE-streaming DeepSeek API client.
- * No external dependencies — uses Node's built-in fetch.
- */
+/** Stateless Responses client: complete output items are replayed by the provider. */
 export class DeepSeekClient {
 	constructor(
 		private readonly baseUrl: string,
@@ -21,183 +14,132 @@ export class DeepSeekClient {
 		private readonly requestHeaders: Readonly<Record<string, string>> = {},
 	) {}
 
-	/**
-	 * Stream a chat completion from the DeepSeek API.
-	 * Parses SSE chunks and dispatches callbacks for content, thinking, and tool calls.
-	 */
 	async streamChatCompletion(
 		request: DeepSeekRequest,
 		callbacks: StreamCallbacks,
 		cancellationToken?: CancellationToken,
 	): Promise<void> {
 		const controller = new AbortController();
-		const cancelListener = cancellationToken?.onCancellationRequested(() => {
-			controller.abort();
-		});
+		const cancelListener = cancellationToken?.onCancellationRequested(() => controller.abort());
 		if (cancellationToken?.isCancellationRequested) {
 			controller.abort();
 		}
 
 		try {
-			// Request usage stats in streaming responses so we can calibrate token counting.
-			const requestBody = {
-				...request,
-				stream_options: { include_usage: true },
-			};
-
 			const headers = new Headers({
 				'Content-Type': 'application/json',
+				Accept: 'text/event-stream',
 				Authorization: `Bearer ${this.apiKey}`,
 			});
 			for (const [name, value] of Object.entries(this.requestHeaders)) {
 				headers.set(name, value);
 			}
-
-			const response = await fetch(`${this.baseUrl}/chat/completions`, {
+			const response = await fetch(getResponsesUrl(this.baseUrl), {
 				method: 'POST',
 				headers,
-				body: safeStringify(requestBody),
+				body: safeStringify(createResponsesRequestBody(request)),
 				signal: controller.signal,
 			});
-
 			if (!response.ok) {
 				throw await createHttpError(response, { baseUrl: this.baseUrl, request });
 			}
-
 			if (!response.body) {
-				throw new Error('No response body received');
+				throw new Error('No Responses body received.');
 			}
 
+			const processor = new ResponsesStreamProcessor(callbacks);
 			const reader = response.body.getReader();
 			const decoder = new TextDecoder();
 			let buffer = '';
-			let latestUsage: DeepSeekUsage | undefined;
-
-			// Accumulate tool call deltas by index, then emit on finish_reason=stop/tool_calls
-			const pendingToolCalls = new Map<number, DeepSeekToolCall>();
-
-			while (true) {
-				if (cancellationToken?.isCancellationRequested) {
-					controller.abort();
-					return;
+			const processBlock = (block: string): void => {
+				const event = parseResponsesEvent(parseResponsesSseBlock(block));
+				if (event === 'done') {
+					processor.assertCompleted();
+				} else if (event) {
+					processor.process(event);
 				}
-
-				const { done, value } = await reader.read();
-				if (done) {
-					break;
-				}
-
-				buffer += decoder.decode(value, { stream: true });
-
-				const lines = buffer.split('\n');
-				buffer = lines.pop() || '';
-
-				for (const line of lines) {
-					const trimmed = line.trim();
-
-					if (!trimmed || trimmed.startsWith(':')) {
-						continue;
-					}
-
-					if (trimmed === 'data: [DONE]') {
-						// Flush any remaining tool calls
-						for (const tc of pendingToolCalls.values()) {
-							callbacks.onToolCall(tc);
-						}
-						pendingToolCalls.clear();
-						reportFinalUsage(callbacks, latestUsage);
-						callbacks.onDone();
+			};
+			try {
+				while (!processor.isCompleted) {
+					if (cancellationToken?.isCancellationRequested) {
 						return;
 					}
-
-					if (!trimmed.startsWith('data: ')) {
-						continue;
+					const { done, value } = await reader.read();
+					buffer += done ? decoder.decode() : decoder.decode(value, { stream: true });
+					let separator: RegExpMatchArray | null;
+					while ((separator = buffer.match(/\r\n\r\n|\n\n|\r\r/))) {
+						const index = separator.index!;
+						processBlock(buffer.slice(0, index));
+						buffer = buffer.slice(index + separator[0].length);
+						if (processor.isCompleted) {
+							break;
+						}
 					}
-
-					const jsonStr = trimmed.slice(6);
-					try {
-						const chunk: DeepSeekStreamChunk = JSON.parse(jsonStr);
-						const choice = chunk.choices?.[0];
-
-						// Some OpenAI-compatible providers emit usage on every streaming chunk.
-						// Keep only the latest value and report it once when the stream completes.
-						if (chunk.usage) {
-							latestUsage = chunk.usage;
+					if (done) {
+						if (buffer.trim() && !processor.isCompleted) {
+							processBlock(buffer);
 						}
-
-						if (!choice) {
-							continue;
-						}
-
-						// Thinking content → report with correct field name so VS Code renders collapsible blocks
-						const reasoning = choice.delta.reasoning_content;
-						if (reasoning) {
-							callbacks.onThinking(reasoning);
-						}
-
-						// Regular content
-						if (choice.delta.content) {
-							callbacks.onContent(choice.delta.content);
-						}
-
-						// Tool calls — accumulate deltas by index
-						if (choice.delta.tool_calls) {
-							for (const tc of choice.delta.tool_calls) {
-								let pending = pendingToolCalls.get(tc.index);
-								if (!pending && tc.id) {
-									pending = {
-										id: tc.id,
-										type: 'function',
-										function: { name: '', arguments: '' },
-									};
-									pendingToolCalls.set(tc.index, pending);
-								}
-								if (pending) {
-									if (tc.function?.name) {
-										pending.function.name += tc.function.name;
-									}
-									if (tc.function?.arguments) {
-										pending.function.arguments += tc.function.arguments;
-									}
-								}
-							}
-						}
-
-						// Flush pending tool calls on finish
-						if (choice.finish_reason === 'tool_calls' || choice.finish_reason === 'stop') {
-							for (const tc of pendingToolCalls.values()) {
-								callbacks.onToolCall(tc);
-							}
-							pendingToolCalls.clear();
-						}
-					} catch (e) {
-						logger.error('Failed to parse SSE chunk:', jsonStr.slice(0, 200), e);
+						break;
 					}
 				}
+				processor.assertCompleted();
+			} finally {
+				await reader.cancel().catch(() => undefined);
+				reader.releaseLock();
 			}
-
-			reportFinalUsage(callbacks, latestUsage);
-			callbacks.onDone();
 		} catch (error) {
-			if (isAbortError(error) && cancellationToken?.isCancellationRequested) {
+			if (cancellationToken?.isCancellationRequested) {
 				return;
 			}
 			const normalizedError = normalizeRequestError(error, { baseUrl: this.baseUrl, request });
-			logger.error('DeepSeek request failed:', formatRequestError(normalizedError));
+			logger.error('Responses request failed:', formatRequestError(normalizedError));
 			callbacks.onError(normalizedError);
+			throw normalizedError;
 		} finally {
 			cancelListener?.dispose();
 		}
 	}
 }
 
-function reportFinalUsage(callbacks: StreamCallbacks, usage: DeepSeekUsage | undefined): void {
-	if (!usage || !callbacks.onUsage) {
-		return;
-	}
-	callbacks.onUsage(usage);
+export function getResponsesUrl(baseUrl: string): string {
+	const url = new URL(baseUrl);
+	const path = url.pathname.replace(/\/+$/, '');
+	url.pathname = path.endsWith('/responses') ? path : `${path}/responses`;
+	return url.toString();
 }
 
-function isAbortError(error: unknown): boolean {
-	return error instanceof Error && error.name === 'AbortError';
+export function createResponsesRequestBody(request: DeepSeekRequest): Record<string, unknown> {
+	return {
+		model: request.model,
+		input: request.input,
+		stream: true,
+		store: false,
+		...(request.reasoning
+			? {
+					reasoning: {
+						...request.reasoning,
+						...(request.reasoning.effort !== 'none' ? { summary: 'auto' } : {}),
+					},
+				}
+			: {}),
+		...(request.reasoning || request.input.some((item) => item.type === 'reasoning')
+			? { include: ['reasoning.encrypted_content'] }
+			: {}),
+		...(request.max_output_tokens !== undefined
+			? { max_output_tokens: request.max_output_tokens }
+			: {}),
+		...(request.prompt_cache_key ? { prompt_cache_key: request.prompt_cache_key } : {}),
+		...(request.temperature !== undefined ? { temperature: request.temperature } : {}),
+		...(request.top_p !== undefined ? { top_p: request.top_p } : {}),
+		...(request.tools?.length
+			? {
+					tools: request.tools.map((tool) => ({
+						type: tool.type,
+						...tool.function,
+						strict: false,
+					})),
+					tool_choice: request.tool_choice ?? 'auto',
+				}
+			: {}),
+	};
 }

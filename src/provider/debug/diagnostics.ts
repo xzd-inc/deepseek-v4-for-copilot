@@ -1258,7 +1258,7 @@ export function createCacheTraceSnapshot(
 		model: request.model,
 		cacheTraceKey: hashString(`${request.model}:${firstMessage?.hash ?? 'empty'}`),
 		redactedComparisonInput,
-		requiresReasoningContent: request.thinking?.type === 'enabled',
+		requiresReasoningContent: Boolean(request.reasoning),
 		inputAssistantSummaries: summarizeInputAssistantMessages(inputMessages),
 		toolsHash: hashString(toolsSerialized),
 		toolSummaries,
@@ -1275,8 +1275,8 @@ function createRedactedComparisonInput(
 	return stableStringify({
 		model: request.model,
 		tool_choice: request.tool_choice ?? null,
-		thinking: request.thinking ?? null,
-		reasoning_effort: request.reasoning_effort ?? null,
+		reasoning: request.reasoning ?? null,
+		prompt_cache_key: request.prompt_cache_key ?? null,
 		tools: toolSummaries,
 		messages: messageSummaries,
 	});

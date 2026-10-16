@@ -1,7 +1,12 @@
 import vscode from 'vscode';
 import { createUserFacingError } from '../client';
 import { logger } from '../logger';
-import type { DeepSeekToolCall, DeepSeekUsage } from '../types';
+import type {
+	DeepSeekToolCall,
+	DeepSeekUsage,
+	ResponsesOutputItem,
+	ResponsesReasoningItem,
+} from '../types';
 import {
 	observeCancellationToken,
 	type CacheDiagnosticsRun,
@@ -17,6 +22,9 @@ import { formatRequestLogLine, type RequestKind } from './routing';
 
 interface ResponseStreamState {
 	accumulatedReasoning: string;
+	reasoningItems: ResponsesReasoningItem[];
+	outputItems: ResponsesOutputItem[];
+	reasoningTokens?: number;
 	emittedToolCallIds: string[];
 	initialResponseNoticeReported: boolean;
 	replayMarkerReported: boolean;
@@ -43,6 +51,8 @@ export function streamChatCompletion({
 }: StreamChatCompletionOptions): Promise<void> {
 	const state: ResponseStreamState = {
 		accumulatedReasoning: '',
+		reasoningItems: [],
+		outputItems: [],
 		emittedToolCallIds: [],
 		initialResponseNoticeReported: false,
 		replayMarkerReported: false,
@@ -68,6 +78,13 @@ export function streamChatCompletion({
 					handleToolCall(toolCall, state, progress);
 				},
 
+				onReasoningItem: (item: ResponsesReasoningItem) => {
+					state.reasoningItems.push(item);
+				},
+				onOutputItems: (items) => {
+					state.outputItems = items;
+				},
+
 				onError: (error: Error) => {
 					throw createUserFacingError(error);
 				},
@@ -82,6 +99,7 @@ export function streamChatCompletion({
 				},
 
 				onUsage: (usage) => {
+					state.reasoningTokens = usage.reasoning_tokens;
 					const charsPerToken = prepared.hasNativeImages
 						? getCharsPerToken()
 						: updateCharsPerToken(prepared.totalRequestChars, usage, getCharsPerToken());
@@ -207,6 +225,9 @@ function getReplayMarkerMetadata(
 	return {
 		...prepared.replayMarkerMetadata,
 		reasoningText: state.accumulatedReasoning || undefined,
+		reasoningItems: state.outputItems.length === 0 ? state.reasoningItems : undefined,
+		outputItems: state.outputItems.length > 0 ? state.outputItems : undefined,
+		reasoningTokens: state.reasoningTokens,
 	};
 }
 
@@ -217,10 +238,12 @@ function handleThinking(
 ): void {
 	state.accumulatedReasoning += text;
 
-	// LanguageModelThinkingPart is a proposed API; the project root augmentation provides types.
-	progress.report(
-		new vscode.LanguageModelThinkingPart(text) as unknown as vscode.LanguageModelResponsePart,
-	);
+	// Thinking UI is optional on VS Code versions without this API.
+	if (typeof vscode.LanguageModelThinkingPart === 'function') {
+		progress.report(
+			new vscode.LanguageModelThinkingPart(text) as unknown as vscode.LanguageModelResponsePart,
+		);
+	}
 }
 
 function handleToolCall(
@@ -230,14 +253,8 @@ function handleToolCall(
 ): void {
 	state.emittedToolCallIds.push(toolCall.id);
 
-	try {
-		const args = JSON.parse(toolCall.function.arguments);
-		progress.report(
-			new vscode.LanguageModelToolCallPart(toolCall.id, toolCall.function.name, args),
-		);
-	} catch {
-		progress.report(new vscode.LanguageModelToolCallPart(toolCall.id, toolCall.function.name, {}));
-	}
+	const args = JSON.parse(toolCall.function.arguments);
+	progress.report(new vscode.LanguageModelToolCallPart(toolCall.id, toolCall.function.name, args));
 }
 
 function finalizeReplayDiagnostics(
@@ -276,6 +293,9 @@ function reportCopilotContextUsage(
 		prompt_tokens_details: {
 			cached_tokens: usage.prompt_cache_hit_tokens ?? 0,
 		},
+		...(usage.reasoning_tokens !== undefined
+			? { completion_tokens_details: { reasoning_tokens: usage.reasoning_tokens } }
+			: {}),
 	};
 
 	try {

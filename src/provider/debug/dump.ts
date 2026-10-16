@@ -3,6 +3,7 @@ import { appendFile, mkdir, writeFile } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import vscode from 'vscode';
+import { createResponsesRequestBody } from '../../client/core';
 import { getRequestDumpEnabled } from '../../config';
 import { LANGUAGE_MODEL_CHAT_SYSTEM_ROLE } from '../../consts';
 import { safeStringify, toWellFormedString } from '../../json';
@@ -214,8 +215,10 @@ export function dumpDeepSeekRequest(
 			createPipelineSnapshot('resolved', request, options.resolvedMessages, options, context),
 		);
 
-		const requestJson = await writeJsonFile(paths.request, request, (value) =>
-			JSON.stringify(value, null, 2),
+		const requestJson = await writeJsonFile(
+			paths.request,
+			createResponsesRequestBody(request),
+			(value) => JSON.stringify(value, null, 2),
 		);
 
 		if (msg0 && paths.msg0) {

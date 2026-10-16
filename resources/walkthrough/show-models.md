@@ -1,3 +1,5 @@
-DeepSeek models appear in the Copilot model picker as soon as the extension is active. If you do not see them right away, scroll down in the picker or open the Language Models manager.
+Select **GPT 6.1 Sol** in Copilot Chat. If hidden, open the Language Models manager and show it under the retained **DeepSeek** provider.
 
-Without an API key, the models show a warning icon and ask you to run **DeepSeek: Set API Key**.
+Without a key, the model displays a warning and asks you to run **DeepSeek: Set API Key**.
+
+The default model profile is user supplied, with native image input, tools, and low / medium / high / xhigh / max reasoning efforts. High is the default. Capabilities depend on your endpoint and do not guarantee built-in Copilot service parity.

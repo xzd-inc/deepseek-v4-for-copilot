@@ -19,6 +19,9 @@ type Translations = Record<string, string>;
 
 const zh: Translations = {
 	// Model descriptions
+	'model.gpt-6.1-sol.detail': '用户提供的 Responses 端点配置',
+	'model.gpt-6.1-sol.tooltip':
+		'GPT 6.1 Sol 的能力与令牌限制来自用户提供的端点配置，并非独立验证的公开模型规格。',
 	'model.deepseek-flash.detail': '图像理解与思考模式',
 	'model.deepseek-flash.tooltip': 'DeepSeek V4.1 Flash，支持图片与文本输入、思考模式和工具调用。',
 	'model.retirement.custom':
@@ -44,7 +47,7 @@ const zh: Translations = {
 
 	// API Key
 	'auth.apiKeyRequiredDetail': '请先配置 API Key',
-	'auth.prompt': '请输入 DeepSeek API Key 或兼容服务令牌。官方 DeepSeek Key 通常以 "sk-" 开头。',
+	'auth.prompt': '请输入所配置 Responses 端点的 API Key 或服务商令牌。',
 	'auth.placeholder': 'sk-... 或服务商令牌',
 	'auth.emptyValidation': 'API Key 不能为空',
 	'auth.saved': 'API Key 已安全保存。',
@@ -68,13 +71,18 @@ const zh: Translations = {
 	// Thinking Effort — short labels for model picker dropdown
 	'status.thinking': '思考模式',
 	'thinking.none': '停用',
-	'thinking.none.desc': '停用思考，响应更快',
-	'thinking.low': '轻量',
-	'thinking.low.desc': '轻量推理，适合快速编辑和简单任务',
-	'thinking.high': '标准',
-	'thinking.high.desc': '推荐日常使用',
-	'thinking.max': '深度',
-	'thinking.max.desc': '深度推理，适合复杂任务',
+	'thinking.none.desc': '停用推理，仅适用于明确支持此选项的后端',
+	'thinking.low': '低',
+	'thinking.low.desc': '请求较低的推理强度',
+	'thinking.medium': '中',
+	'thinking.medium.desc': '请求中等推理强度',
+	'thinking.high': '高',
+	'thinking.high.desc': '请求高推理强度，默认配置',
+	'thinking.xhigh': '更高',
+	'thinking.xhigh.desc': '请求更高的推理强度',
+	'thinking.max': '最高',
+	'thinking.max.desc': '请求端点配置允许的最高推理强度',
+	'thinking.unsupported': '不支持思考强度“{0}”。此模型允许的值：{1}。',
 
 	// Vision
 	'vision.proxyUsing': '视觉代理：{0}',
@@ -84,7 +92,7 @@ const zh: Translations = {
 	'vision.action.configureProxy': '配置视觉代理',
 	'vision.panel.title': 'DeepSeek 视觉代理',
 	'vision.panel.description':
-		'为 V4 Flash 和 Pro 入口配置一个将图片转换成文字描述的视觉模型。V4.1 Flash 和 Vision Exp 会直接处理原图。',
+		'为需要视觉代理的旧配置设置图片描述模型。默认 GPT 6.1 Sol 配置会直接接收原图。',
 	'vision.panel.source.vscodeLm': 'VS Code 模型',
 	'vision.panel.source.apiEndpoint': 'API 端点',
 	'vision.panel.field.source': '视觉代理来源',
@@ -238,6 +246,9 @@ const zh: Translations = {
 
 const en: Translations = {
 	// Model descriptions
+	'model.gpt-6.1-sol.detail': 'User-supplied Responses endpoint profile',
+	'model.gpt-6.1-sol.tooltip':
+		'GPT 6.1 Sol capabilities and token limits come from a user-supplied endpoint profile, not independently verified public specifications.',
 	'model.deepseek-flash.detail': 'Vision and thinking mode',
 	'model.deepseek-flash.tooltip':
 		'DeepSeek V4.1 Flash with image and text input, thinking mode, and tool calling.',
@@ -267,16 +278,15 @@ const en: Translations = {
 
 	// API Key
 	'auth.apiKeyRequiredDetail': 'Please run DeepSeek: Set API Key to configure.',
-	'auth.prompt':
-		'Enter your DeepSeek API key or compatible provider token. Official DeepSeek keys usually start with "sk-".',
+	'auth.prompt': 'Enter the API key or provider token for your configured Responses endpoint.',
 	'auth.placeholder': 'sk-... or provider token',
 	'auth.emptyValidation': 'API key cannot be empty',
-	'auth.saved': 'DeepSeek API key saved.',
-	'auth.removed': 'DeepSeek API key removed.',
+	'auth.saved': 'API key saved securely.',
+	'auth.removed': 'API key removed.',
 	'auth.clearConfirm': 'Clear the saved API Key?',
 	'auth.clearDetail': 'You may need to set an API Key again before using the extension.',
 	'auth.clearAction': 'Clear API Key',
-	'auth.notConfigured': 'DeepSeek API key is not configured. Set an API key and try again.',
+	'auth.notConfigured': 'API key is not configured. Run DeepSeek: Set API Key and try again.',
 
 	// Settings
 	'settings.resetBaseUrl.title': 'Reset DeepSeek Base URL',
@@ -294,13 +304,18 @@ const en: Translations = {
 	// Thinking Effort
 	'status.thinking': 'Thinking Effort',
 	'thinking.none': 'None',
-	'thinking.none.desc': 'Disable thinking for faster responses',
+	'thinking.none.desc': 'Disable reasoning only when explicitly supported by the backend',
 	'thinking.low': 'Low',
-	'thinking.low.desc': 'Light reasoning for quick edits and simple tasks',
+	'thinking.low.desc': 'Request low reasoning effort',
+	'thinking.medium': 'Medium',
+	'thinking.medium.desc': 'Request medium reasoning effort',
 	'thinking.high': 'High',
-	'thinking.high.desc': 'Recommended for most tasks',
+	'thinking.high.desc': 'Request high reasoning effort, the default profile setting',
+	'thinking.xhigh': 'Extra High',
+	'thinking.xhigh.desc': 'Request extra-high reasoning effort',
 	'thinking.max': 'Max',
-	'thinking.max.desc': 'Maximum reasoning depth for complex agent tasks',
+	'thinking.max.desc': 'Request the highest reasoning effort declared by the endpoint profile',
+	'thinking.unsupported': 'Unsupported reasoning effort "{0}". This model supports: {1}.',
 
 	// Vision
 	// NOTE: vision.unableToDescribe has been moved to consts.ts as
@@ -312,7 +327,7 @@ const en: Translations = {
 	'vision.action.configureProxy': 'Configure Vision Proxy',
 	'vision.panel.title': 'DeepSeek Vision Proxy',
 	'vision.panel.description':
-		'Configure a vision model that turns images into text for V4 Flash and Pro entries. V4.1 Flash and Vision Exp process original images directly.',
+		'Configure an image-description model for legacy profiles that need a proxy. The default GPT 6.1 Sol profile sends original images directly.',
 	'vision.panel.source.vscodeLm': 'VS Code model',
 	'vision.panel.source.apiEndpoint': 'API endpoint',
 	'vision.panel.field.source': 'Vision proxy source',

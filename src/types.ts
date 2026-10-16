@@ -1,11 +1,14 @@
 /**
  * Shared types for the DeepSeek Copilot extension.
+ *
+ * The provider keeps the historical DeepSeek-prefixed names for compatibility
+ * with diagnostics and settings, but the wire protocol is OpenAI Responses.
  */
 
 // ---- API request/response types ----
 
-/** API-level reasoning efforts. Disabling thinking is modeled separately. */
-export type ReasoningEffort = 'low' | 'high' | 'max';
+/** Reasoning efforts accepted by the Responses API model registry. */
+export type ReasoningEffort = 'none' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
 export interface DeepSeekTextContentPart {
 	type: 'text';
@@ -21,12 +24,105 @@ export interface DeepSeekImageUrlContentPart {
 
 export type DeepSeekContentPart = DeepSeekTextContentPart | DeepSeekImageUrlContentPart;
 
+export interface ResponsesInputTextPart {
+	type: 'input_text';
+	text: string;
+}
+
+export interface ResponsesInputImagePart {
+	type: 'input_image';
+	image_url: string;
+	detail?: 'auto' | 'low' | 'high';
+}
+
+export interface ResponsesOutputTextPart {
+	type: 'output_text';
+	text: string;
+}
+
+export interface ResponsesRefusalPart {
+	type: 'refusal';
+	refusal: string;
+}
+
+export type ResponsesMessageContentPart =
+	| ResponsesInputTextPart
+	| ResponsesInputImagePart
+	| ResponsesOutputTextPart
+	| ResponsesRefusalPart;
+
+export interface ResponsesMessageItem {
+	type: 'message';
+	role: 'system' | 'developer' | 'user' | 'assistant';
+	content: ResponsesMessageContentPart[];
+	status?: string;
+	id?: string;
+}
+
+export interface ResponsesReasoningSummaryPart {
+	type: 'summary_text';
+	text: string;
+}
+
+/** A reasoning output item that must be replayed verbatim across turns. */
+export interface ResponsesReasoningItem {
+	type: 'reasoning';
+	id?: string;
+	summary?: ResponsesReasoningSummaryPart[];
+	encrypted_content?: string | null;
+	status?: string;
+	readonly [key: string]: unknown;
+}
+
+export interface ResponsesFunctionCallItem {
+	type: 'function_call';
+	id?: string;
+	call_id: string;
+	name: string;
+	arguments: string;
+	status?: string;
+}
+
+export interface ResponsesFunctionCallOutputItem {
+	type: 'function_call_output';
+	call_id: string;
+	output: string | (ResponsesInputTextPart | ResponsesInputImagePart)[];
+	status?: string;
+}
+
+export type ResponsesInputItem =
+	| ResponsesMessageItem
+	| ResponsesReasoningItem
+	| ResponsesFunctionCallItem
+	| ResponsesFunctionCallOutputItem;
+
+export interface ResponsesTool {
+	type: 'function';
+	name: string;
+	description?: string;
+	parameters?: Record<string, unknown>;
+	strict?: boolean;
+}
+
+export interface ResponsesOutputMessageItem extends ResponsesMessageItem {
+	role: 'assistant';
+	id?: string;
+}
+
+export type ResponsesOutputItem =
+	| ResponsesOutputMessageItem
+	| ResponsesReasoningItem
+	| ResponsesFunctionCallItem;
+
 export interface DeepSeekMessage {
 	role: 'system' | 'user' | 'assistant' | 'tool';
 	content: string | DeepSeekContentPart[];
 	tool_call_id?: string;
 	tool_calls?: DeepSeekToolCall[];
 	reasoning_content?: string;
+	/** Internal replay metadata; never sent as a chat-completions field. */
+	responsesReasoningItems?: ResponsesReasoningItem[];
+	responsesOutputItems?: ResponsesOutputItem[];
 }
 
 export interface DeepSeekToolCall {
@@ -38,6 +134,7 @@ export interface DeepSeekToolCall {
 	};
 }
 
+/** Legacy internal tool shape; converted to a flat Responses function tool on the wire. */
 export interface DeepSeekTool {
 	type: 'function';
 	function: {
@@ -53,48 +150,23 @@ export interface DeepSeekUsage {
 	total_tokens: number;
 	prompt_cache_hit_tokens?: number;
 	prompt_cache_miss_tokens?: number;
+	reasoning_tokens?: number;
 }
 
 export interface DeepSeekRequest {
 	model: string;
+	/** Internal chat-shaped history retained for diagnostics and classification. */
 	messages: DeepSeekMessage[];
+	/** The actual OpenAI Responses input item list sent by the client. */
+	input: ResponsesInputItem[];
 	stream: boolean;
 	temperature?: number;
 	top_p?: number;
-	max_tokens?: number;
+	max_output_tokens?: number;
 	tools?: DeepSeekTool[];
 	tool_choice?: 'none' | 'auto' | 'required';
-	thinking?: { type: 'enabled' | 'disabled' };
-	reasoning_effort?: ReasoningEffort;
-	stream_options?: {
-		include_usage: boolean;
-	};
-}
-
-export interface DeepSeekStreamChunk {
-	id: string;
-	object: string;
-	created: number;
-	model: string;
-	choices: Array<{
-		index: number;
-		delta: {
-			role?: string;
-			content?: string;
-			reasoning_content?: string;
-			tool_calls?: Array<{
-				index: number;
-				id?: string;
-				type?: string;
-				function?: {
-					name?: string;
-					arguments?: string;
-				};
-			}>;
-		};
-		finish_reason: string | null;
-	}>;
-	usage?: DeepSeekUsage;
+	reasoning?: { effort: ReasoningEffort };
+	prompt_cache_key?: string;
 }
 
 // ---- Stream callbacks ----
@@ -103,6 +175,8 @@ export interface StreamCallbacks {
 	onContent: (content: string) => void;
 	onThinking: (text: string) => void;
 	onToolCall: (toolCall: DeepSeekToolCall) => void;
+	onReasoningItem?: (item: ResponsesReasoningItem) => void;
+	onOutputItems?: (items: ResponsesOutputItem[]) => void;
 	onError: (error: Error) => void;
 	onDone: () => void;
 	onUsage?: (usage: DeepSeekUsage) => void;
@@ -141,6 +215,7 @@ export interface ModelDefinition {
 	detail: string;
 	maxInputTokens: number;
 	maxOutputTokens: number;
+	contextWindowTokens?: number;
 	capabilities: {
 		toolCalling: boolean;
 		imageInput: boolean;
