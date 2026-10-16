@@ -29,7 +29,7 @@ let dumpWriteQueue: Promise<void> = Promise.resolve();
 const REQUEST_OBSERVATIONS_FILE = '_request-observations.jsonl';
 const HASH_WINDOW_CHARS = 2_048;
 
-type DumpEvent = 'provider-input' | 'deepseek-request';
+type DumpEvent = 'provider-input' | 'responses-request';
 type DumpStage = 'provider-input' | 'input' | 'resolved';
 
 interface DumpContext {
@@ -138,7 +138,7 @@ export function dumpProviderInput(options: DumpProviderInputOptions): void {
 	const context = createDumpContext(
 		options.globalStorageUri,
 		options.segment,
-		'deepseek-provider-input',
+		'responses-provider-input',
 		(providerInputDumpCounter += 1),
 		requestKind,
 	);
@@ -176,10 +176,10 @@ export function dumpProviderInput(options: DumpProviderInputOptions): void {
  *
  * Files land under `<dump root>/<conversationSegmentId>/` so marker replay and
  * cache-lineage changes are easy to inspect across provider calls:
- *   deepseek-request-<timestamp>-NNNN.input.json     — VS Code input snapshot
- *   deepseek-request-<timestamp>-NNNN.resolved.json  — post-vision VS Code snapshot
- *   deepseek-request-<timestamp>-NNNN.json           — full request body
- *   deepseek-request-<timestamp>-NNNN.msg0.txt       — messages[0] content (system prompt)
+ *   responses-request-<timestamp>-NNNN.input.json     — VS Code input snapshot
+ *   responses-request-<timestamp>-NNNN.resolved.json  — post-vision VS Code snapshot
+ *   responses-request-<timestamp>-NNNN.json           — full request body
+ *   responses-request-<timestamp>-NNNN.msg0.txt       — messages[0] content (system prompt)
  */
 export function dumpDeepSeekRequest(
 	request: DeepSeekRequest,
@@ -196,7 +196,7 @@ export function dumpDeepSeekRequest(
 	const context = createDumpContext(
 		options.globalStorageUri,
 		options.segment,
-		'deepseek-request',
+		'responses-request',
 		(dumpCounter += 1),
 		requestKind,
 	);
@@ -231,7 +231,7 @@ export function dumpDeepSeekRequest(
 		await writeDumpObservation(
 			options.globalStorageUri,
 			createDumpObservation({
-				event: 'deepseek-request',
+				event: 'responses-request',
 				context,
 				segment: options.segment,
 				paths,
@@ -1108,5 +1108,5 @@ function getRequestDumpBaseRootUri(globalStorageUri: vscode.Uri): vscode.Uri {
 		return vscode.Uri.joinPath(globalStorageUri, 'request-dumps');
 	}
 
-	return vscode.Uri.file(join(tmpdir(), 'deepseek-request-dumps'));
+	return vscode.Uri.file(join(tmpdir(), 'responses-request-dumps'));
 }

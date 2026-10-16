@@ -1,4 +1,5 @@
 import vscode from 'vscode';
+import { MODEL_VENDOR } from '../consts';
 import { logger } from '../logger';
 import { DeepSeekChatProvider } from '../provider';
 
@@ -6,12 +7,14 @@ export function registerProvider(context: vscode.ExtensionContext): DeepSeekChat
 	const provider = new DeepSeekChatProvider(context);
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('deepseek-copilot.setApiKey', () => provider.configureApiKey()),
-		vscode.commands.registerCommand('deepseek-copilot.clearApiKey', () => provider.clearApiKey()),
-		vscode.commands.registerCommand('deepseek-copilot.setVisionModel', () =>
+		vscode.commands.registerCommand('responses-copilot.setApiKey', () =>
+			provider.configureApiKey(),
+		),
+		vscode.commands.registerCommand('responses-copilot.clearApiKey', () => provider.clearApiKey()),
+		vscode.commands.registerCommand('responses-copilot.setVisionModel', () =>
 			provider.setVisionModel(),
 		),
-		vscode.lm.registerLanguageModelChatProvider('deepseek', provider),
+		vscode.lm.registerLanguageModelChatProvider(MODEL_VENDOR, provider),
 	);
 
 	// Make models discoverable without waiting for Copilot, which may itself be waiting for BYOK.

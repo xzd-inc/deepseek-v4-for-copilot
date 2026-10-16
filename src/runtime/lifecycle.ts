@@ -21,7 +21,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 		logger.info(`Extension activated version=${context.extension.packageJSON.version}`);
 	} catch (error) {
-		logger.error('Failed to activate DeepSeek extension', error);
+		logger.error('Failed to activate Responses for Copilot extension', error);
 		void vscode.window.showErrorMessage(t('extension.activateFailed'));
 		throw error;
 	}

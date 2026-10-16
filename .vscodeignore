@@ -3,6 +3,8 @@ README.md
 README.zh-cn.md
 src/**
 test/**
+resources/icon.png
+resources/screenshots/**
 out/**/*.map
 out/**/*.d.ts
 out/**/*.d.ts.map

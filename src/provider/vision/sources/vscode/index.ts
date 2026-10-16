@@ -127,14 +127,14 @@ export class VSCodeLanguageModelVisionDescriber implements VisionDescriber {
 }
 
 export function getVisionPrompt(): string {
-	const config = vscode.workspace.getConfiguration('deepseek-copilot');
+	const config = vscode.workspace.getConfiguration('responses-copilot');
 	return (
 		config.get<string>('visionPrompt', IMAGE_DESCRIPTION_PROMPT).trim() || IMAGE_DESCRIPTION_PROMPT
 	);
 }
 
 export function getConfiguredVisionModelKey(): string | undefined {
-	const config = vscode.workspace.getConfiguration('deepseek-copilot');
+	const config = vscode.workspace.getConfiguration('responses-copilot');
 	const key = config.get<string>('visionModel', '');
 	return key.trim() || undefined;
 }
@@ -148,7 +148,7 @@ export async function saveVSCodeVisionModelKey(key: string): Promise<void> {
 	if (!normalizedKey) {
 		throw new Error(t('vision.panel.error.required', t('vision.panel.source.vscodeLm')));
 	}
-	const config = vscode.workspace.getConfiguration('deepseek-copilot');
+	const config = vscode.workspace.getConfiguration('responses-copilot');
 	await config.update('visionModel', normalizedKey, vscode.ConfigurationTarget.Global);
 }
 

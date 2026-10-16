@@ -8,7 +8,8 @@ import type { ModelDefinition } from './types';
  */
 
 /** VS Code configuration section prefix for all extension settings. */
-export const CONFIG_SECTION = 'deepseek-copilot';
+export const CONFIG_SECTION = 'responses-copilot';
+export const MODEL_VENDOR = 'responses-copilot';
 
 export const EXTERNAL_URLS = {
 	deepseek: {
@@ -32,16 +33,16 @@ export const LANGUAGE_MODEL_CHAT_SYSTEM_ROLE = 3;
 
 // ---- Secret keys ----
 
-/** SecretStorage key for the DeepSeek API key. */
-export const API_KEY_SECRET = 'deepseek-copilot.apiKey';
+/** SecretStorage key for the configured Responses endpoint API key. */
+export const API_KEY_SECRET = 'responses-copilot.apiKey';
 
 /** memento key tracking whether the welcome walkthrough has been shown. */
-export const WELCOME_SHOWN_KEY = 'deepseek-copilot.welcomeShown';
+export const WELCOME_SHOWN_KEY = 'responses-copilot.welcomeShown';
 
 // ---- Walkthrough ----
 
 /** Walkthrough contribution ID. */
-export const WALKTHROUGH_ID = 'Vizards.deepseek-v4-for-copilot#deepseekGettingStarted';
+export const WALKTHROUGH_ID = 'responses-local.responses-for-copilot#responsesGettingStarted';
 
 // ---- Model registry ----
 

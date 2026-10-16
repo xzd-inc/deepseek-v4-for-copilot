@@ -1,5 +1,5 @@
 import vscode from 'vscode';
-import { CONFIG_SECTION, EXTERNAL_URLS } from '../consts';
+import { CONFIG_SECTION } from '../consts';
 import { t } from '../i18n';
 import { logger } from '../logger';
 import { ensureRequestDumpRoot } from '../provider/debug';
@@ -10,16 +10,13 @@ interface ResetTarget extends vscode.QuickPickItem {
 
 export function registerCommands(context: vscode.ExtensionContext): void {
 	context.subscriptions.push(
-		vscode.commands.registerCommand('deepseek-copilot.resetBaseUrl', resetBaseUrl),
-		vscode.commands.registerCommand('deepseek-copilot.showLogs', () => logger.show()),
-		vscode.commands.registerCommand('deepseek-copilot.openRequestDumpsFolder', () =>
+		vscode.commands.registerCommand('responses-copilot.resetBaseUrl', resetBaseUrl),
+		vscode.commands.registerCommand('responses-copilot.showLogs', () => logger.show()),
+		vscode.commands.registerCommand('responses-copilot.openRequestDumpsFolder', () =>
 			openRequestDumpsFolder(context),
 		),
-		vscode.commands.registerCommand('deepseek-copilot.getApiKey', () =>
-			vscode.env.openExternal(vscode.Uri.parse(EXTERNAL_URLS.deepseek.apiKeys)),
-		),
-		vscode.commands.registerCommand('deepseek-copilot.openSettings', () =>
-			vscode.commands.executeCommand('workbench.action.openSettings', 'deepseek-copilot'),
+		vscode.commands.registerCommand('responses-copilot.openSettings', () =>
+			vscode.commands.executeCommand('workbench.action.openSettings', 'responses-copilot'),
 		),
 	);
 }
@@ -49,7 +46,8 @@ async function resetBaseUrl(): Promise<void> {
 							? t('settings.resetBaseUrl.afterInherited')
 							: t(
 									'settings.resetBaseUrl.after',
-									(workspaceValue ?? inspection?.defaultValue) || 'https://api.deepseek.com',
+									(workspaceValue ?? inspection?.defaultValue) ||
+										'https://gd.yundu.lol/v1/responses',
 								),
 			},
 			// baseUrl has window scope: folder overrides do not apply in a multi-root workspace.
@@ -67,7 +65,8 @@ async function resetBaseUrl(): Promise<void> {
 									? undefined
 									: t(
 											'settings.resetBaseUrl.after',
-											(userValue ?? inspection?.defaultValue) || 'https://api.deepseek.com',
+											(userValue ?? inspection?.defaultValue) ||
+												'https://gd.yundu.lol/v1/responses',
 										),
 						},
 					]
@@ -95,7 +94,7 @@ async function resetBaseUrl(): Promise<void> {
 		// Global uses VS Code's user-setting routing, including remote user overrides.
 		await config.update('baseUrl', undefined, selected.target);
 	} catch (error) {
-		logger.warn('Failed to reset DeepSeek base URL', error);
+		logger.warn('Failed to reset Responses base URL', error);
 		void vscode.window.showErrorMessage(t('settings.resetBaseUrl.failed'));
 	}
 }

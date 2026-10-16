@@ -121,7 +121,7 @@ export function normalizeRequestError(error: unknown, context: RequestErrorConte
 	const enhanced = new DeepSeekRequestError({
 		message: code
 			? `DeepSeek request failed due to network error ${code}`
-			: 'DeepSeek request failed due to a network error',
+			: 'Responses request failed due to a network error',
 		userSummary,
 		kind: 'network',
 		baseUrl: context.baseUrl,

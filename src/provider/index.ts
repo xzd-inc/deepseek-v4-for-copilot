@@ -22,8 +22,7 @@ import { processToolFlow } from './tools/flow';
 import { createVisionService } from './vision';
 
 /**
- * DeepSeek Chat Provider — implements vscode.LanguageModelChatProvider so
- * DeepSeek V4 models appear directly in the Copilot Chat model picker.
+ * Responses Chat Provider — exposes configured Responses models in Copilot Chat.
  */
 export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
 	private readonly authManager: AuthManager;
@@ -65,14 +64,14 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
 			// Settings-based fallback API key + base URL changes.
 			vscode.workspace.onDidChangeConfiguration((e) => {
 				if (
-					e.affectsConfiguration('deepseek-copilot.apiKey') ||
-					e.affectsConfiguration('deepseek-copilot.baseUrl')
+					e.affectsConfiguration('responses-copilot.apiKey') ||
+					e.affectsConfiguration('responses-copilot.baseUrl')
 				) {
 					this.invalidateCurrencyAndRefreshModels();
 				} else if (
-					e.affectsConfiguration('deepseek-copilot.modelIdOverrides') ||
-					e.affectsConfiguration('deepseek-copilot.models') ||
-					e.affectsConfiguration('deepseek-copilot.maxTokens')
+					e.affectsConfiguration('responses-copilot.modelIdOverrides') ||
+					e.affectsConfiguration('responses-copilot.models') ||
+					e.affectsConfiguration('responses-copilot.maxTokens')
 				) {
 					this.refreshModelPicker();
 				}
@@ -81,7 +80,7 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
 			// When another window sets/clears the API key, refresh this window's
 			// model picker so the warning state stays in sync.
 			context.secrets.onDidChange((e) => {
-				if (e.key === 'deepseek-copilot.apiKey') {
+				if (e.key === 'responses-copilot.apiKey') {
 					this.invalidateCurrencyAndRefreshModels();
 				}
 			}),

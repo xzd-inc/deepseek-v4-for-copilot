@@ -1,19 +1,21 @@
-# Copilot Chat Responses 模型
+# Responses for Copilot
 
 <!-- marketplace-readme:remove-start -->
 [English](README.md) · [更新记录](CHANGELOG.md) · [MIT](LICENSE)
 <!-- marketplace-readme:remove-end -->
 
-在 Copilot Chat 的模型选择器中使用兼容 OpenAI Responses 的端点。默认配置是 **GPT 6.1 Sol**，地址为 **https://gd.yundu.lol/v1/responses**，使用你自行提供的服务商 API Key。为兼容现有集成，扩展 ID、DeepSeek 提供方标识、命令 ID 和 `deepseek-copilot.*` 设置命名空间保持不变。
+在 Copilot Chat 的模型选择器中使用兼容 OpenAI Responses 的端点。默认配置是 **GPT 6.1 Sol**，地址为 **https://gd.yundu.lol/v1/responses**，使用你自行提供的服务商 API Key。
+
+本扩展是基于 [Vizards/deepseek-v4-for-copilot](https://github.com/Vizards/deepseek-v4-for-copilot) 的独立分支，遵循 MIT 许可，并在随扩展打包的 `LICENSE` 文件中保留原作者版权声明。独立安装标识为 `responses-local.responses-for-copilot`，模型提供方为 `responses-copilot`，命令和设置使用 `responses-copilot.*`，可与原扩展同时安装。`responses-local` 仅为本地打包标识，并非已注册的 Marketplace 发布者。设置和密钥独立保存；从旧版切换时，将所需设置复制到新前缀，并重新设置 API Key。
 
 端点、模型名称、能力和令牌限制来自**用户提供的 `model.json` 配置**，并非独立验证的 OpenAI 公开模型规格。本扩展不保证与 GitHub Copilot 内置专有服务、模型行为、工具或订阅功能完全一致。端点可用性、计费、隐私和速率限制由服务商决定；这里不宣称任何模型价格。
 
 ## 开始使用
 
 1. 使用 **VS Code 1.116 及以上版本**，并确保当前账号能够使用 Copilot Chat。提供方集成与部分模型选择器控件依赖 VS Code/Copilot API，版本升级可能影响兼容性。
-2. 安装或构建本扩展，沿用的扩展名称是 **DeepSeek V4 for Copilot Chat**。
-3. 在设置中核对端点后，从命令面板运行 **DeepSeek: 设置 API Key**，输入该端点签发的令牌。密钥通过 VS Code **SecretStorage** 保存，不写入 `settings.json`。使用 **DeepSeek: 清除 API Key** 可删除。保留的“获取 API Key”命令仍打开 DeepSeek 网站，不能为默认第三方端点签发令牌。
-4. 打开 Copilot Chat，选择 **GPT 6.1 Sol**。若模型被隐藏，打开语言模型管理器，在 **DeepSeek** 提供方下显示它。模型的配置菜单可选择思考强度。
+2. 安装或构建 **Responses for Copilot**。
+3. 在设置中核对端点后，从命令面板运行 **Responses for Copilot: 设置 API Key**，输入该端点签发的令牌。密钥通过 VS Code **SecretStorage** 保存，不写入 `settings.json`。使用 **Responses for Copilot: 清除 API Key** 可删除。请从所配置的服务商获取凭据。
+4. 打开 Copilot Chat，选择 **GPT 6.1 Sol**。若模型被隐藏，打开语言模型管理器，在 **Responses for Copilot** 提供方下显示它。模型的配置菜单可选择思考强度。
 
 这些配置不会主动查找凭据，也未通过真实端点请求验证模型能力。发送代码、提示词或图片前，请自行了解服务商。
 
@@ -23,8 +25,8 @@
 
 ```json
 {
-  "deepseek-copilot.baseUrl": "https://gd.yundu.lol/v1/responses",
-  "deepseek-copilot.models": [
+  "responses-copilot.baseUrl": "https://gd.yundu.lol/v1/responses",
+  "responses-copilot.models": [
     {
       "id": "gpt-6.1-sol",
       "name": "GPT 6.1 Sol",
@@ -41,10 +43,10 @@
       "canDisableReasoning": false
     }
   ],
-  "deepseek-copilot.maxTokens": 0,
-  "deepseek-copilot.promptCacheKey": "auto",
-  "deepseek-copilot.modelIdOverrides": {},
-  "deepseek-copilot.requestHeaders": {}
+  "responses-copilot.maxTokens": 0,
+  "responses-copilot.promptCacheKey": "auto",
+  "responses-copilot.modelIdOverrides": {},
+  "responses-copilot.requestHeaders": {}
 }
 ```
 
@@ -89,7 +91,7 @@ Responses 请求使用 `store: false` 并请求加密推理内容。完整且有
 
 默认用户配置启用原生图片和函数工具请求。具体可用工具、Instructions、MCP 集成和 Agent 界面由 Copilot 决定；本扩展无法重现内置提供方的全部能力，也不保证每种工具流程完全一致。本扩展没有运行时包依赖，不需要单独运行代理进程。
 
-`deepseek-copilot.debugMode` 默认是 `minimal`。`metadata` 增加诊断元数据，分享前请检查内容。`verbose` 会写入完整的本地请求 dump，可能包含提示词、源代码、图片、工具定义和重放状态。使用 **DeepSeek: 打开请求 Dump 目录** 查看文件，使用 **DeepSeek: 显示日志** 查看诊断。
+`responses-copilot.debugMode` 默认是 `minimal`。`metadata` 增加诊断元数据，分享前请检查内容。`verbose` 会写入完整的本地请求 dump，可能包含提示词、源代码、图片、工具定义和重放状态。使用 **Responses for Copilot: 打开请求 Dump 目录** 查看文件，使用 **Responses for Copilot: 显示日志** 查看诊断。
 
 视觉代理命令和设置为兼容性保留，原生图片模型不需要代理。`experimental.stabilizeToolList` 默认关闭，可能增加输入令牌和内部预检调用，不保证提高后端缓存命中率。
 

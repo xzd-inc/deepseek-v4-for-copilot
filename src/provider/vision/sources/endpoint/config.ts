@@ -11,9 +11,9 @@ import type {
 } from '../../types';
 import { MAX_TIMEOUT_MS } from '../../consts';
 
-export const VISION_PROXY_CONFIG_KEY = 'deepseek-copilot.visionProxy.config';
-export const VISION_PROXY_SOURCE_KEY = 'deepseek-copilot.visionProxy.source';
-export const VISION_PROXY_API_KEY_SECRET = 'deepseek-copilot.visionProxy.apiKey';
+export const VISION_PROXY_CONFIG_KEY = 'responses-copilot.visionProxy.config';
+export const VISION_PROXY_SOURCE_KEY = 'responses-copilot.visionProxy.source';
+export const VISION_PROXY_API_KEY_SECRET = 'responses-copilot.visionProxy.apiKey';
 
 const PROTECTED_EXTRA_BODY_KEYS = new Set(['model', 'messages', 'input', 'stream']);
 

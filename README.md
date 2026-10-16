@@ -1,19 +1,21 @@
-# Responses models for Copilot Chat
+# Responses for Copilot
 
 <!-- marketplace-readme:remove-start -->
 [简体中文](README.zh-cn.md) · [Changelog](CHANGELOG.md) · [MIT](LICENSE)
 <!-- marketplace-readme:remove-end -->
 
-Use an OpenAI Responses-compatible endpoint from the Copilot Chat model picker. The default is **GPT 6.1 Sol** at **https://gd.yundu.lol/v1/responses**, using your own provider API key. The extension ID, DeepSeek vendor, command IDs, and `deepseek-copilot.*` settings namespace are retained for existing integrations.
+Use an OpenAI Responses-compatible endpoint from the Copilot Chat model picker. The default is **GPT 6.1 Sol** at **https://gd.yundu.lol/v1/responses**, using your own provider API key.
+
+This independent fork is based on [Vizards/deepseek-v4-for-copilot](https://github.com/Vizards/deepseek-v4-for-copilot) under the MIT license; the original copyright notice is preserved in the bundled `LICENSE` file. Its local installation ID is `responses-local.responses-for-copilot`, its model vendor is `responses-copilot`, and its commands and settings use `responses-copilot.*`. It can coexist with the upstream extension. `responses-local` is a local packaging identifier, not a registered Marketplace publisher. Settings and API keys are separate: copy desired settings to the new prefix and set the API key again.
 
 The endpoint, model names, capabilities, and token bounds come from a **user-supplied `model.json` profile**. They are not independently verified public OpenAI model specifications. This provider does not guarantee parity with GitHub Copilot's built-in proprietary service, model behavior, tools, or subscription features. Endpoint availability, billing, privacy, and rate limits are controlled by your provider; no model prices are advertised here.
 
 ## Setup
 
 1. Use VS Code **1.116 or later** with Copilot Chat available to your account. Provider integration and some picker controls depend on VS Code/Copilot APIs and may change between releases.
-2. Install or build this extension. Its historical extension name is **DeepSeek V4 for Copilot Chat**.
-3. Review the endpoint in Settings, then run **DeepSeek: Set API Key** from the Command Palette. Enter the token issued for that endpoint. It is stored through VS Code **SecretStorage**, not in `settings.json`. Use **DeepSeek: Clear API Key** to remove it. The retained **Get API Key** command opens DeepSeek's website; it does not issue a token for the default third-party endpoint.
-4. Open Copilot Chat and select **GPT 6.1 Sol**. If hidden, open **Chat: Manage Language Models**, find the **DeepSeek** provider, and show the model. Open its model configuration to choose a reasoning effort.
+2. Install or build **Responses for Copilot**.
+3. Review the endpoint in Settings, then run **Responses for Copilot: Set API Key** from the Command Palette. Enter the token issued for that endpoint. It is stored through VS Code **SecretStorage**, not in `settings.json`. Use **Responses for Copilot: Clear API Key** to remove it. Obtain credentials from your configured provider.
+4. Open Copilot Chat and select **GPT 6.1 Sol**. If hidden, open **Chat: Manage Language Models**, find the **Responses for Copilot** provider, and show the model. Open its model configuration to choose a reasoning effort.
 
 No credential discovery or live endpoint verification is performed by this configuration. Review a provider before sending code, prompts, or images to it.
 
@@ -23,8 +25,8 @@ This complete `settings.json` example reproduces the default endpoint profile:
 
 ```json
 {
-  "deepseek-copilot.baseUrl": "https://gd.yundu.lol/v1/responses",
-  "deepseek-copilot.models": [
+  "responses-copilot.baseUrl": "https://gd.yundu.lol/v1/responses",
+  "responses-copilot.models": [
     {
       "id": "gpt-6.1-sol",
       "name": "GPT 6.1 Sol",
@@ -41,10 +43,10 @@ This complete `settings.json` example reproduces the default endpoint profile:
       "canDisableReasoning": false
     }
   ],
-  "deepseek-copilot.maxTokens": 0,
-  "deepseek-copilot.promptCacheKey": "auto",
-  "deepseek-copilot.modelIdOverrides": {},
-  "deepseek-copilot.requestHeaders": {}
+  "responses-copilot.maxTokens": 0,
+  "responses-copilot.promptCacheKey": "auto",
+  "responses-copilot.modelIdOverrides": {},
+  "responses-copilot.requestHeaders": {}
 }
 ```
 
@@ -89,7 +91,7 @@ Responses requests use `store: false` and request encrypted reasoning content. T
 
 Native image and function-tool requests are enabled by the supplied profile. Copilot controls which tools, instructions, MCP integrations, and agent UI are available; this extension cannot reproduce every built-in provider feature or guarantee that every tool workflow works identically. It has no runtime package dependencies or separate proxy process.
 
-`deepseek-copilot.debugMode` defaults to `minimal`. `metadata` adds diagnostic metadata; review it before sharing. `verbose` writes full local request dumps that may contain prompts, source code, images, tool schemas, and replay state. Open them with **DeepSeek: Open Request Dumps Folder**. Use **DeepSeek: Show Logs** for diagnostics.
+`responses-copilot.debugMode` defaults to `minimal`. `metadata` adds diagnostic metadata; review it before sharing. `verbose` writes full local request dumps that may contain prompts, source code, images, tool schemas, and replay state. Open them with **Responses for Copilot: Open Request Dumps Folder**. Use **Responses for Copilot: Show Logs** for diagnostics.
 
 The Vision Proxy commands/settings are retained for compatibility; native-image profiles do not need them. `experimental.stabilizeToolList` remains disabled by default; it may add input tokens and internal preflight calls, and backend cache improvements are not guaranteed.
 

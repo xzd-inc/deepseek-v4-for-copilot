@@ -58,7 +58,7 @@ const zh: Translations = {
 	'auth.notConfigured': '尚未配置 API Key，请先设置 API Key 后重试。',
 
 	// Settings
-	'settings.resetBaseUrl.title': '恢复 DeepSeek Base URL 默认配置',
+	'settings.resetBaseUrl.title': '恢复 Responses Base URL 默认配置',
 	'settings.resetBaseUrl.chooseScope': '选择要重置的范围；仅移除该范围的自定义地址',
 	'settings.resetBaseUrl.user': '用户设置',
 	'settings.resetBaseUrl.workspace': '当前工作区',
@@ -66,7 +66,8 @@ const zh: Translations = {
 	'settings.resetBaseUrl.notConfigured': '未自定义，无需重置',
 	'settings.resetBaseUrl.after': '重置后生效地址：{0}',
 	'settings.resetBaseUrl.afterInherited': '重置后继承其余配置，实际生效地址请查看设置',
-	'settings.resetBaseUrl.failed': '重置 Base URL 失败，请运行 "DeepSeek: 显示日志" 查看详情。',
+	'settings.resetBaseUrl.failed':
+		'重置 Base URL 失败，请运行 "Responses for Copilot: 显示日志" 查看详情。',
 
 	// Thinking Effort — short labels for model picker dropdown
 	'status.thinking': '思考模式',
@@ -90,7 +91,7 @@ const zh: Translations = {
 	'vision.unavailable': '无可用视觉模型，图片已忽略。',
 	'vision.proxyError': '视觉代理异常：',
 	'vision.action.configureProxy': '配置视觉代理',
-	'vision.panel.title': 'DeepSeek 视觉代理',
+	'vision.panel.title': 'Responses for Copilot 视觉代理',
 	'vision.panel.description':
 		'为需要视觉代理的旧配置设置图片描述模型。默认 GPT 6.1 Sol 配置会直接接收原图。',
 	'vision.panel.source.vscodeLm': 'VS Code 模型',
@@ -200,7 +201,7 @@ const zh: Translations = {
 	// Request
 	'request.preflightRoundLimitExceeded':
 		'实验性稳定工具列表设置已尝试 {0} 轮，仍无法得到稳定的已启用工具列表。请关闭该实验性设置，或先用 VS Code 的 Configure Tools 关闭不常用的工具。',
-	'notice.visionProxyMissing': '⚠️ 视觉代理不可用，DeepSeek 无法看到图片。[配置视觉代理]({0})',
+	'notice.visionProxyMissing': '⚠️ 视觉代理不可用，当前模型无法看到图片。[配置视觉代理]({0})',
 	'notice.visionProxyFailure': '**⚠️ {0}**\\\n\\\n**{1} · {2}**',
 	'notice.toolDrift':
 		'⚠️ 工具列表不稳定，缓存命中率可能下降。[了解更多](https://github.com/Vizards/deepseek-v4-for-copilot/blob/main/docs/notices/tool-drift.zh.md)',
@@ -235,13 +236,14 @@ const zh: Translations = {
 	'error.network.configuration': '[{0}] 请求配置无效。请检查自定义 baseUrl 或扩展设置。',
 	'error.network.generic':
 		'[{0}] 网络请求失败。请检查网络连接、防火墙或代理设置，以及自定义 baseUrl。',
-	'error.unknown': 'DeepSeek 请求失败：{0}',
+	'error.unknown': 'Responses 请求失败：{0}',
 
 	// Extension
-	'extension.activateFailed': 'DeepSeek 激活失败，请运行 "DeepSeek: 显示日志" 查看详情。',
+	'extension.activateFailed':
+		'Responses for Copilot 激活失败，请运行 "Responses for Copilot: 显示日志" 查看详情。',
 	'extension.welcomeFailed': '欢迎引导加载异常',
 	'extension.openRequestDumpsFolderFailed':
-		'打开请求 dump 目录失败，请运行 "DeepSeek: 显示日志" 查看详情。',
+		'打开请求 dump 目录失败，请运行 "Responses for Copilot: 显示日志" 查看详情。',
 };
 
 const en: Translations = {
@@ -277,7 +279,7 @@ const en: Translations = {
 		'Experimental DeepSeek V4 Flash vision model with native image and text input.',
 
 	// API Key
-	'auth.apiKeyRequiredDetail': 'Please run DeepSeek: Set API Key to configure.',
+	'auth.apiKeyRequiredDetail': 'Please run Responses for Copilot: Set API Key to configure.',
 	'auth.prompt': 'Enter the API key or provider token for your configured Responses endpoint.',
 	'auth.placeholder': 'sk-... or provider token',
 	'auth.emptyValidation': 'API key cannot be empty',
@@ -286,10 +288,11 @@ const en: Translations = {
 	'auth.clearConfirm': 'Clear the saved API Key?',
 	'auth.clearDetail': 'You may need to set an API Key again before using the extension.',
 	'auth.clearAction': 'Clear API Key',
-	'auth.notConfigured': 'API key is not configured. Run DeepSeek: Set API Key and try again.',
+	'auth.notConfigured':
+		'API key is not configured. Run Responses for Copilot: Set API Key and try again.',
 
 	// Settings
-	'settings.resetBaseUrl.title': 'Reset DeepSeek Base URL',
+	'settings.resetBaseUrl.title': 'Reset Responses Base URL',
 	'settings.resetBaseUrl.chooseScope': 'Choose a scope; only its custom URL will be removed',
 	'settings.resetBaseUrl.user': 'User Settings',
 	'settings.resetBaseUrl.workspace': 'Current Workspace',
@@ -299,7 +302,7 @@ const en: Translations = {
 	'settings.resetBaseUrl.afterInherited':
 		'Inherits remaining configuration after reset; check Settings for the effective URL',
 	'settings.resetBaseUrl.failed':
-		'Failed to reset Base URL. Run "DeepSeek: Show Logs" for details.',
+		'Failed to reset Base URL. Run "Responses for Copilot: Show Logs" for details.',
 
 	// Thinking Effort
 	'status.thinking': 'Thinking Effort',
@@ -325,7 +328,7 @@ const en: Translations = {
 	'vision.unavailable': 'No vision models available, image(s) ignored',
 	'vision.proxyError': 'Vision proxy error:',
 	'vision.action.configureProxy': 'Configure Vision Proxy',
-	'vision.panel.title': 'DeepSeek Vision Proxy',
+	'vision.panel.title': 'Responses for Copilot Vision Proxy',
 	'vision.panel.description':
 		'Configure an image-description model for legacy profiles that need a proxy. The default GPT 6.1 Sol profile sends original images directly.',
 	'vision.panel.source.vscodeLm': 'VS Code model',
@@ -450,7 +453,7 @@ const en: Translations = {
 	'request.preflightRoundLimitExceeded':
 		'Experimental tool-list stabilization tried {0} rounds but still could not get a stable enabled-tools list. Turn this experimental setting off, or use VS Code Configure Tools to disable tools you rarely use first.',
 	'notice.visionProxyMissing':
-		'⚠️ Vision Proxy is unavailable. DeepSeek cannot see images. [Configure Vision Proxy]({0})',
+		'⚠️ Vision Proxy is unavailable. the current model cannot see images. [Configure Vision Proxy]({0})',
 	'notice.visionProxyFailure': '**⚠️ {0}**\\\n\\\n**{1} · {2}**',
 	'notice.toolDrift':
 		'⚠️ Tool list is unstable; cache hit rate may drop. [Learn more](https://github.com/Vizards/deepseek-v4-for-copilot/blob/main/docs/notices/tool-drift.en.md)',
@@ -496,13 +499,14 @@ const en: Translations = {
 		'[{0}] The request configuration is invalid. Check your custom baseUrl or extension settings.',
 	'error.network.generic':
 		'[{0}] Network request failed. Check your network connection, firewall, or proxy settings, and your custom baseUrl.',
-	'error.unknown': 'DeepSeek request failed: {0}',
+	'error.unknown': 'Responses request failed: {0}',
 
 	// Extension
-	'extension.activateFailed': 'DeepSeek failed to activate. Run "DeepSeek: Show Logs" for details.',
-	'extension.welcomeFailed': 'Failed to show DeepSeek welcome prompt',
+	'extension.activateFailed':
+		'Responses for Copilot failed to activate. Run "Responses for Copilot: Show Logs" for details.',
+	'extension.welcomeFailed': 'Failed to show Responses for Copilot welcome prompt',
 	'extension.openRequestDumpsFolderFailed':
-		'Failed to open request dumps folder. Run "DeepSeek: Show Logs" for details.',
+		'Failed to open request dumps folder. Run "Responses for Copilot: Show Logs" for details.',
 };
 
 /**

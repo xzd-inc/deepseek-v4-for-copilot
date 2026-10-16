@@ -1,8 +1,8 @@
 /**
- * Shared types for the DeepSeek Copilot extension.
+ * Shared types for the Responses for Copilot extension.
  *
- * The provider keeps the historical DeepSeek-prefixed names for compatibility
- * with diagnostics and settings, but the wire protocol is OpenAI Responses.
+ * Historical DeepSeek-prefixed internal type names are retained; the public
+ * extension identity and wire protocol use Responses.
  */
 
 // ---- API request/response types ----

@@ -5,7 +5,7 @@ import { isOfficialDeepSeekBaseUrl, normalizeBaseUrl } from '../../endpoint';
 import { logger } from '../../logger';
 import type { PricingCurrency } from '../../types';
 
-const CACHE_KEY = 'deepseek-copilot.balanceCurrency.cache';
+const CACHE_KEY = 'responses-copilot.balanceCurrency.cache';
 const BALANCE_TIMEOUT_MS = 5000;
 
 interface CachedBalanceCurrency {
