@@ -20,7 +20,7 @@ import {
 } from '../routing';
 import type { ConversationSegment } from '../segment';
 import { ACTIVATE_TOOL_PREFIX } from '../tools/consts';
-import type { VisionProxySource, VisionResolutionStats } from '../vision';
+import type { ImageInputSummary } from '../images';
 
 let dumpCounter = 0;
 let providerInputDumpCounter = 0;
@@ -107,9 +107,7 @@ export interface DumpDeepSeekRequestOptions {
 	inputMessages: readonly vscode.LanguageModelChatRequestMessage[];
 	resolvedMessages: readonly vscode.LanguageModelChatRequestMessage[];
 	requestOptions: vscode.ProvideLanguageModelChatResponseOptions;
-	visionModelId?: string;
-	visionProxySource?: VisionProxySource;
-	visionStats?: VisionResolutionStats;
+	imageStats?: ImageInputSummary;
 }
 
 export interface DumpProviderInputOptions {
@@ -177,7 +175,7 @@ export function dumpProviderInput(options: DumpProviderInputOptions): void {
  * Files land under `<dump root>/<conversationSegmentId>/` so marker replay and
  * cache-lineage changes are easy to inspect across provider calls:
  *   responses-request-<timestamp>-NNNN.input.json     — VS Code input snapshot
- *   responses-request-<timestamp>-NNNN.resolved.json  — post-vision VS Code snapshot
+ *   responses-request-<timestamp>-NNNN.resolved.json  — prepared VS Code snapshot
  *   responses-request-<timestamp>-NNNN.json           — full request body
  *   responses-request-<timestamp>-NNNN.msg0.txt       — messages[0] content (system prompt)
  */
@@ -357,14 +355,7 @@ function createPipelineSnapshot(
 			thinkingEffort: options.thinkingEffort,
 			maxTokens: options.maxTokens ?? null,
 		},
-		vision:
-			stage === 'resolved'
-				? {
-						modelId: options.visionModelId ?? null,
-						source: options.visionProxySource ?? null,
-						stats: options.visionStats ?? null,
-					}
-				: undefined,
+		images: stage === 'resolved' ? options.imageStats : undefined,
 		deepSeekPromptSummary: summarizeDeepSeekSystemPrompt(request.messages),
 		messages,
 		requestOptions: options.requestOptions,
@@ -377,7 +368,7 @@ function createDumpSnapshot(options: {
 	segment: ConversationSegment;
 	requestKind: RequestKind;
 	model: object;
-	vision?: object;
+	images?: ImageInputSummary;
 	deepSeekPromptSummary?: SystemPromptSummary;
 	messages: readonly vscode.LanguageModelChatRequestMessage[];
 	requestOptions: vscode.ProvideLanguageModelChatResponseOptions;
@@ -394,7 +385,7 @@ function createDumpSnapshot(options: {
 		model: options.model,
 		options: summarizeRequestOptions(options.requestOptions),
 		hostSettings: summarizeHostSettings(),
-		vision: options.vision,
+		images: options.images,
 		systemPromptSummary: summarizeVscodeSystemPrompt(options.messages),
 		deepSeekPromptSummary: options.deepSeekPromptSummary,
 		messageStats: summarizeMessages(serializedMessages),
@@ -457,9 +448,6 @@ type SerializedContentPart =
 				segmentId?: string;
 				payloadFormat?: string;
 				legacySegmentOnly?: boolean;
-				visionTextChars?: number;
-				visionTextHash?: string;
-				visionTextIgnoredReason?: string;
 				reasoningTextChars?: number;
 				reasoningTextHash?: string;
 				reasoningTextIgnoredReason?: string;
@@ -574,9 +562,6 @@ function summarizeReplayMarker(marker: ReturnType<typeof parseReplayMarkerData>)
 	segmentId?: string;
 	payloadFormat?: string;
 	legacySegmentOnly?: boolean;
-	visionTextChars?: number;
-	visionTextHash?: string;
-	visionTextIgnoredReason?: string;
 	reasoningTextChars?: number;
 	reasoningTextHash?: string;
 	reasoningTextIgnoredReason?: string;
@@ -587,9 +572,6 @@ function summarizeReplayMarker(marker: ReturnType<typeof parseReplayMarkerData>)
 		segmentId: marker.segmentId,
 		payloadFormat: marker.payloadFormat,
 		legacySegmentOnly: marker.legacySegmentOnly,
-		visionTextChars: marker.visionText?.length,
-		visionTextHash: marker.visionText ? hashString(marker.visionText) : undefined,
-		visionTextIgnoredReason: marker.visionTextIgnoredReason,
 		reasoningTextChars: marker.reasoningText?.length,
 		reasoningTextHash: marker.reasoningText ? hashString(marker.reasoningText) : undefined,
 		reasoningTextIgnoredReason: marker.reasoningTextIgnoredReason,

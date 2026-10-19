@@ -15,8 +15,6 @@ import type {
 	ReplayMarkerMetadata,
 	ReplayMarkerParseResult,
 	ReplayMarkerPayloadFormat,
-	ToolVisionReplayEntry,
-	VisionMarkerTextIgnoredReason,
 } from './types';
 
 export function findFirstReplayMarker(
@@ -49,11 +47,7 @@ function parseReplayMarkerPart(part: unknown): ReplayMarkerParseResult | undefin
 
 export function hasReplayMarkerMetadata(metadata: ReplayMarkerMetadata): boolean {
 	return Boolean(
-		metadata.visionText ||
-		metadata.reasoningText ||
-		metadata.toolVision?.length ||
-		metadata.reasoningItems?.length ||
-		metadata.outputItems?.length,
+		metadata.reasoningText || metadata.reasoningItems?.length || metadata.outputItems?.length,
 	);
 }
 
@@ -61,8 +55,6 @@ export function createReplayMarkerPart(
 	metadata: ReplayMarkerMetadata,
 ): vscode.LanguageModelDataPart {
 	const payload = encodeReplayMarkerJson({
-		...createVisionMarkerPayload(metadata.visionText),
-		...(metadata.toolVision?.length ? { toolVision: { results: metadata.toolVision } } : {}),
 		...createReasoningMarkerPayload(metadata.reasoningText),
 		...(metadata.reasoningItems?.length ? { reasoningItems: metadata.reasoningItems } : {}),
 		...(metadata.outputItems?.length ? { outputItems: metadata.outputItems } : {}),
@@ -115,8 +107,6 @@ export function parseReplayMarkerData(data: Uint8Array): ReplayMarkerParseResult
 			return { valid: false, error: segmentId.error };
 		}
 
-		const vision = parseVisionMarkerMetadata(value);
-		const toolVision = parseToolVisionMarkerMetadata(value);
 		const reasoning = parseReasoningMarkerMetadata(value);
 		const reasoningTokens = (value as { reasoningTokens?: unknown }).reasoningTokens;
 		const rawOutputItems = (value as { outputItems?: unknown }).outputItems;
@@ -127,17 +117,10 @@ export function parseReplayMarkerData(data: Uint8Array): ReplayMarkerParseResult
 		const reasoningItems = Array.isArray(rawReasoningItems)
 			? rawReasoningItems.filter(isResponsesReasoningItem)
 			: outputItems.filter(isResponsesReasoningItem);
-		const hasMetadata =
-			vision.visionText ||
-			toolVision?.length ||
-			reasoning.reasoningText ||
-			reasoningItems.length ||
-			outputItems.length;
+		const hasMetadata = reasoning.reasoningText || reasoningItems.length || outputItems.length;
 		return {
 			valid: true,
 			segmentId: segmentId.value,
-			...vision,
-			...(toolVision ? { toolVision } : {}),
 			...reasoning,
 			...(reasoningItems.length > 0 ? { reasoningItems } : {}),
 			...(outputItems.length > 0 ? { outputItems } : {}),
@@ -169,53 +152,6 @@ function parseOptionalSegmentId(value: object): {
 		return { error: 'segment-id-not-uuid' };
 	}
 	return { value: segmentId.toLowerCase() };
-}
-
-function createVisionMarkerPayload(visionText: string | undefined): object {
-	return visionText ? { vision: { text: visionText } } : {};
-}
-
-function parseVisionMarkerMetadata(value: object): {
-	visionText?: string;
-	visionTextIgnoredReason?: VisionMarkerTextIgnoredReason;
-} {
-	const vision = (value as { vision?: unknown }).vision;
-	if (vision === undefined) {
-		return {};
-	}
-	if (!vision || typeof vision !== 'object' || Array.isArray(vision)) {
-		return { visionTextIgnoredReason: 'vision-not-object' };
-	}
-
-	const text = (vision as { text?: unknown }).text;
-	if (typeof text !== 'string') {
-		return { visionTextIgnoredReason: 'vision-text-not-string' };
-	}
-	if (text.length === 0) {
-		return { visionTextIgnoredReason: 'vision-text-empty' };
-	}
-
-	return { visionText: text };
-}
-
-function parseToolVisionMarkerMetadata(value: object): ToolVisionReplayEntry[] | undefined {
-	const results = (value as { toolVision?: { results?: unknown } }).toolVision?.results;
-	const entries = Array.isArray(results) ? results.filter(isToolVisionReplayEntry) : [];
-	return entries.length > 0 ? entries : undefined;
-}
-
-function isToolVisionReplayEntry(value: unknown): value is ToolVisionReplayEntry {
-	const entry = value as Partial<ToolVisionReplayEntry> | null;
-	return Boolean(
-		entry &&
-		typeof entry.callId === 'string' &&
-		entry.callId.length > 0 &&
-		typeof entry.resolvedContent === 'string' &&
-		entry.resolvedContent.length > 0 &&
-		typeof entry.imageParts === 'number' &&
-		Number.isSafeInteger(entry.imageParts) &&
-		entry.imageParts > 0,
-	);
 }
 
 function createReasoningMarkerPayload(reasoningText: string | undefined): object {

@@ -1,5 +1,5 @@
-Select **GPT 6.1 Sol** in Copilot Chat. If hidden, open the Language Models manager and show it under the **Responses for Copilot** provider.
+在 Copilot Chat 中选择 **Responses for Copilot** 中已配置的模型。若模型隐藏，请打开语言模型管理器，在提供方下显示它。
 
-Without a key, the model displays a warning and asks you to run **Responses for Copilot: Set API Key**.
+未配置密钥时，模型会显示警告并提示运行 **Responses for Copilot: 设置 API Key**。
 
-The default model profile is user supplied, with native image input, tools, and low / medium / high / xhigh / max reasoning efforts. High is the default. Capabilities depend on your endpoint and do not guarantee built-in Copilot service parity.
+默认模型配置来自用户提供的资料，启用原生图片、工具和 low / medium / high / xhigh / max 思考强度，默认 high。具体能力取决于端点，不保证与 Copilot 内置服务完全一致。

@@ -3,6 +3,7 @@ import { CONFIG_SECTION } from '../consts';
 import { t } from '../i18n';
 import { logger } from '../logger';
 import { ensureRequestDumpRoot } from '../provider/debug';
+import { manageModels } from './models';
 
 interface ResetTarget extends vscode.QuickPickItem {
 	target: vscode.ConfigurationTarget;
@@ -17,6 +18,14 @@ export function registerCommands(context: vscode.ExtensionContext): void {
 		),
 		vscode.commands.registerCommand('responses-copilot.openSettings', () =>
 			vscode.commands.executeCommand('workbench.action.openSettings', 'responses-copilot'),
+		),
+		vscode.commands.registerCommand('responses-copilot.manageModels', () =>
+			manageModels().catch((error) => {
+				logger.warn('Failed to manage Responses models', error);
+				void vscode.window.showErrorMessage(
+					`模型配置未保存：${error instanceof Error ? error.message : String(error)}`,
+				);
+			}),
 		),
 	);
 }

@@ -17,11 +17,7 @@ import type {
 	ResponsesReasoningItem,
 } from '../types';
 import { parseFirstReplayMarker } from './replay';
-import {
-	isImageDataPart,
-	normalizeToolResult,
-	type NormalizedToolResult,
-} from './vision/normalize';
+import { isImageDataPart, normalizeToolResult, type NormalizedToolResult } from './images';
 
 /**
  * Convert VS Code chat messages to DeepSeek format.

@@ -4,5 +4,6 @@ export const MAX_PREFLIGHT_ROUNDS_PER_USER_REQUEST = 3;
 
 export const TOOL_DRIFT_NOTICE_START = '[responses-copilot-tool-drift-notice-start]: #';
 export const TOOL_DRIFT_NOTICE_END = '[responses-copilot-tool-drift-notice-end]: #';
+// Kept only to strip obsolete notices from existing conversation history.
 export const VISION_PROXY_NOTICE_START = '[responses-copilot-vision-proxy-notice-start]: #';
 export const VISION_PROXY_NOTICE_END = '[responses-copilot-vision-proxy-notice-end]: #';

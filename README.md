@@ -4,18 +4,18 @@
 [简体中文](README.zh-cn.md) · [Changelog](CHANGELOG.md) · [MIT](LICENSE)
 <!-- marketplace-readme:remove-end -->
 
-Use an OpenAI Responses-compatible endpoint from the Copilot Chat model picker. The default is **GPT 6.1 Sol** at **https://gd.yundu.lol/v1/responses**, using your own provider API key.
+Use configurable GPT and other OpenAI Responses-compatible models from the Copilot Chat model picker. The bundled example is **GPT 6.1 Sol** at **https://gd.yundu.lol/v1/responses**, using your own provider API key.
 
 This independent fork is based on [Vizards/deepseek-v4-for-copilot](https://github.com/Vizards/deepseek-v4-for-copilot) under the MIT license; the original copyright notice is preserved in the bundled `LICENSE` file. Its local installation ID is `responses-local.responses-for-copilot`, its model vendor is `responses-copilot`, and its commands and settings use `responses-copilot.*`. It can coexist with the upstream extension. `responses-local` is a local packaging identifier, not a registered Marketplace publisher. Settings and API keys are separate: copy desired settings to the new prefix and set the API key again.
 
-The endpoint, model names, capabilities, and token bounds come from a **user-supplied `model.json` profile**. They are not independently verified public OpenAI model specifications. This provider does not guarantee parity with GitHub Copilot's built-in proprietary service, model behavior, tools, or subscription features. Endpoint availability, billing, privacy, and rate limits are controlled by your provider; no model prices are advertised here.
+The endpoint, model names, capabilities, and token bounds come from the user-supplied **`responses-copilot.models` setting**. They are not independently verified public OpenAI model specifications. This provider does not guarantee parity with GitHub Copilot's built-in proprietary service, model behavior, tools, or subscription features. Endpoint availability, billing, privacy, and rate limits are controlled by your provider; no model prices are advertised here.
 
 ## Setup
 
 1. Use VS Code **1.116 or later** with Copilot Chat available to your account. Provider integration and some picker controls depend on VS Code/Copilot APIs and may change between releases.
 2. Install or build **Responses for Copilot**.
 3. Review the endpoint in Settings, then run **Responses for Copilot: Set API Key** from the Command Palette. Enter the token issued for that endpoint. It is stored through VS Code **SecretStorage**, not in `settings.json`. Use **Responses for Copilot: Clear API Key** to remove it. Obtain credentials from your configured provider.
-4. Open Copilot Chat and select **GPT 6.1 Sol**. If hidden, open **Chat: Manage Language Models**, find the **Responses for Copilot** provider, and show the model. Open its model configuration to choose a reasoning effort.
+4. Open Copilot Chat and select a configured model under **Responses for Copilot**. If hidden, open **Chat: Manage Language Models**, find the provider, and show the model. Open its model configuration to choose a reasoning effort.
 
 No credential discovery or live endpoint verification is performed by this configuration. Review a provider before sending code, prompts, or images to it.
 
@@ -50,7 +50,7 @@ This complete `settings.json` example reproduces the default endpoint profile:
 }
 ```
 
-- `models` **replaces** the selectable list; `[]` hides all models. Each entry requires an `id` and finite positive integer input/output bounds. Name, family, version, and detail are optional display metadata. Capabilities are opt-in for custom entries: declare only what that endpoint supports. `imageInput: true` means native Responses image input, without Vision Proxy.
+- `models` **replaces** the selectable list; `[]` hides all models. To add a model, keep the existing entries and append another profile. Each entry requires a unique `id` and finite positive integer input/output bounds. Name, family, version, and detail are display metadata. Capabilities are opt-in for custom entries: declare only what that endpoint supports. `imageInput: true` sends images directly as native Responses image input. You can also run `Responses for Copilot: 管理 Responses 模型` to append a basic profile through a wizard; edit advanced fields in Settings JSON.
 - The supplied profile also names `gpt-6-sol` and `gpt-5.6-sol`. To expose either, add a profile with that ID and its matching name/version, using the supplied bounds and supported efforts only if they apply to your service. Neither is enabled implicitly. Old DeepSeek model profiles are not default Responses models.
 - `modelIdOverrides` maps any picker model ID to a different API model ID, for example `{"gpt-6.1-sol": "your-deployment-id"}`. It changes only the transmitted name, not the advertised capabilities or limits.
 - `requestHeaders` adds provider-specific headers. Keep credentials in SecretStorage rather than in settings.
@@ -73,6 +73,8 @@ The supplied profile declares `maxInputTokens: 272000` and `maxOutputTokens: 640
 
 `maxTokens: 0` uses the model's output bound. A positive integer further caps output and cannot increase it above the profile limit. For example, `maxTokens: 16000` advertises 16,000 output and at most 256,000 input for this context window. Model and output-limit changes refresh the picker. For other services, set `contextWindowTokens` to their total context bound; omit it only when the service's input and output limits are independently usable. Token estimation is not an authoritative tokenizer, and the backend can impose smaller limits, including reasoning or image token overhead.
 
+Text token estimates are calibrated separately for each endpoint and transmitted model ID, retaining at most 32 calibration entries. Switching models does not reuse another model's observed ratio; native-image requests do not update text calibration.
+
 ### Reasoning effort
 
 The supplied profile enables `low`, `medium`, `high`, `xhigh`, and `max`, with **high** as its default. Select an effort from the model picker, or change `defaultReasoningEffort` in that model's settings. A custom profile must list its supported efforts and choose a default from that list. Unsupported explicit effort values fail clearly rather than silently falling back or escalating.
@@ -91,9 +93,21 @@ Responses requests use `store: false` and request encrypted reasoning content. T
 
 Native image and function-tool requests are enabled by the supplied profile. Copilot controls which tools, instructions, MCP integrations, and agent UI are available; this extension cannot reproduce every built-in provider feature or guarantee that every tool workflow works identically. It has no runtime package dependencies or separate proxy process.
 
+Settings, command labels, and walkthrough text use Chinese by default.
+
+Network requests follow VS Code's system proxy/PAC and `http.*` settings. If logs show `ECONNRESET`, `Client network socket disconnected before secure TLS connection was established`, and a local `127.0.0.1` proxy port, check that proxy first. If direct access to the endpoint works, add its hostname to `http.noProxy` in VS Code **User Settings**, preserving existing entries:
+
+```json
+{
+  "http.noProxy": ["gd.yundu.lol"]
+}
+```
+
+Only matching hosts connect directly; other hosts retain their proxy configuration. Keep TLS certificate validation enabled. Retry after saving; use **Developer: Reload Window** if the old route persists. An unauthenticated HTTP 401 probe confirms connectivity to authentication, not a valid API key or working model call.
+
 `responses-copilot.debugMode` defaults to `minimal`. `metadata` adds diagnostic metadata; review it before sharing. `verbose` writes full local request dumps that may contain prompts, source code, images, tool schemas, and replay state. Open them with **Responses for Copilot: Open Request Dumps Folder**. Use **Responses for Copilot: Show Logs** for diagnostics.
 
-The Vision Proxy commands/settings are retained for compatibility; native-image profiles do not need them. `experimental.stabilizeToolList` remains disabled by default; it may add input tokens and internal preflight calls, and backend cache improvements are not guaranteed.
+The legacy Vision Proxy command and settings have been removed. Multimodal profiles send image data directly through the Responses API. `experimental.stabilizeToolList` remains disabled by default; it may add input tokens and internal preflight calls, and backend cache improvements are not guaranteed.
 
 ## Development
 

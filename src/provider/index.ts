@@ -17,9 +17,8 @@ import { prepareChatRequest } from './request';
 import { classifyProviderRequest } from './routing';
 import { resolveConversationSegment } from './segment';
 import { streamChatCompletion } from './stream';
-import { estimateTokenCount } from './tokens';
+import { estimateTokenCount, TokenCalibration, tokenCalibrationKey } from './tokens';
 import { processToolFlow } from './tools/flow';
-import { createVisionService } from './vision';
 
 /**
  * Responses Chat Provider — exposes configured Responses models in Copilot Chat.
@@ -35,22 +34,15 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
 
 	private readonly cacheDiagnostics = createCacheDiagnosticsRecorder();
 
-	/** Vision proxy: internal bridge + VS Code LM fallback. */
-	private readonly vision: ReturnType<typeof createVisionService>;
 	private readonly balanceCurrencyResolver: BalanceCurrencyResolver;
 	private readonly pricingRefreshScheduler: PricingRefreshScheduler;
 
-	/**
-	 * Adaptive chars-per-token ratio, calibrated from actual usage data.
-	 * Updated via exponential moving average each time the API reports real token counts.
-	 */
-	private charsPerToken = 4.0;
+	private readonly tokenCalibration = new TokenCalibration();
 
 	constructor(context: vscode.ExtensionContext) {
 		this.authManager = new AuthManager(context);
 		this.globalStorageUri = context.globalStorageUri;
 		this.storageUri = context.storageUri;
-		this.vision = createVisionService(context);
 		this.balanceCurrencyResolver = new BalanceCurrencyResolver(context, this.authManager, () =>
 			this.onDidChangeLanguageModelChatInformationEmitter.fire(),
 		);
@@ -128,10 +120,6 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
 			.finally(() => this.onDidChangeLanguageModelChatInformationEmitter.fire());
 	}
 
-	async setVisionModel(): Promise<void> {
-		await this.vision.openConfiguration();
-	}
-
 	// ---- LanguageModelChatProvider ----
 
 	async provideLanguageModelChatInformation(
@@ -197,36 +185,29 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
 			segment,
 			messages: toolFlow.messages,
 			options,
-			token,
 			cacheDiagnostics: this.cacheDiagnostics,
-			getVisionDescriber: () => this.vision.get(),
 		});
 
 		return streamChatCompletion({
 			prepared,
 			progress,
 			token,
-			initialResponseNotice: joinInitialResponseNotices(
-				toolFlow.initialResponseNotice,
-				prepared.initialResponseNotice,
-			),
-			getCharsPerToken: () => this.charsPerToken,
+			initialResponseNotice: toolFlow.initialResponseNotice,
+			getCharsPerToken: () => this.tokenCalibration.get(prepared.tokenCalibrationKey),
 			setCharsPerToken: (charsPerToken) => {
-				this.charsPerToken = charsPerToken;
+				this.tokenCalibration.set(prepared.tokenCalibrationKey, charsPerToken);
 			},
 		});
 	}
 
 	async provideTokenCount(
-		_modelInfo: vscode.LanguageModelChatInformation,
+		modelInfo: vscode.LanguageModelChatInformation,
 		text: string | vscode.LanguageModelChatRequestMessage,
 		_token: vscode.CancellationToken,
 	): Promise<number> {
-		return estimateTokenCount(text, this.charsPerToken);
+		return estimateTokenCount(
+			text,
+			this.tokenCalibration.get(tokenCalibrationKey(getBaseUrl(), getApiModelId(modelInfo.id))),
+		);
 	}
-}
-
-function joinInitialResponseNotices(...notices: (string | undefined)[]): string | undefined {
-	const joined = notices.filter((notice) => notice && notice.trim().length > 0).join('\n');
-	return joined || undefined;
 }

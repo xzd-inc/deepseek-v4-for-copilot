@@ -48,8 +48,8 @@ export function toChatInfo(
 	usesOfficialModel = true,
 ): ModelPickerChatInformation {
 	const retirement = getModelRetirementNotice(m.id, usesOfficialModel);
-	const modelDetail = resolveModelText(m, 'detail') ?? m.detail;
-	const modelTooltip = resolveModelText(m, 'tooltip');
+	const modelDetail = m.detail;
+	const modelTooltip = modelDetail;
 	const thinkingCapability = m.capabilities.thinking;
 	return {
 		id: m.id,
@@ -148,11 +148,4 @@ function isSupportedReasoningEffort(
 	thinkingCapability: ThinkingCapability,
 ): value is ReasoningEffort {
 	return thinkingCapability.supportedEfforts.some((effort) => effort === value);
-}
-
-function resolveModelText(m: ModelDefinition, field: 'detail' | 'tooltip'): string | undefined {
-	const suffix = m.id.startsWith('deepseek-v4-') ? m.id.slice('deepseek-v4-'.length) : m.id;
-	const key = `model.${suffix}.${field}`;
-	const translated = t(key);
-	return translated !== key ? translated : undefined;
 }

@@ -25,9 +25,6 @@ export const SHOW_LOGS_URI_PATH = '/showLogs';
 /** URI path handled by this extension to open API key configuration. */
 export const CONFIGURE_API_KEY_URI_PATH = '/setApiKey';
 
-/** URI path handled by this extension to open vision model configuration. */
-export const SET_VISION_MODEL_URI_PATH = '/setVisionModel';
-
 // VS Code's internal LanguageModelChatMessageRole.System is not exposed in @types/vscode.
 export const LANGUAGE_MODEL_CHAT_SYSTEM_ROLE = 3;
 
@@ -53,7 +50,7 @@ export const MODELS: (ModelDefinition & { contextWindowTokens?: number })[] = [
 		name: 'GPT 6.1 Sol',
 		family: 'gpt',
 		version: '6.1-sol',
-		detail: 'User-supplied Responses endpoint profile',
+		detail: '用户配置的 Responses 模型',
 		maxInputTokens: 272000,
 		maxOutputTokens: 64000,
 		contextWindowTokens: 272000,

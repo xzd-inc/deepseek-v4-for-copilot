@@ -48,7 +48,10 @@ export function getPromptCacheKey(): string {
 /** Configured entries replace the defaults, so retired DeepSeek profiles are never implicit. */
 export function getConfiguredModels(): ModelDefinition[] {
 	const configured = vscode.workspace.getConfiguration(CONFIG_SECTION).get<unknown>('models');
-	const models = configured === undefined ? MODELS : configured;
+	return parseModelProfiles(configured === undefined ? MODELS : configured);
+}
+
+export function parseModelProfiles(models: unknown): ModelDefinition[] {
 	if (!Array.isArray(models)) {
 		throw new Error(`${CONFIG_SECTION}.models must be an array of model profiles.`);
 	}
@@ -119,11 +122,7 @@ export function getConfiguredModels(): ModelDefinition[] {
 			name: optionalString(value.name, `${path}.name`, id),
 			family: optionalString(value.family, `${path}.family`, 'custom'),
 			version: optionalString(value.version, `${path}.version`, id),
-			detail: optionalString(
-				value.detail,
-				`${path}.detail`,
-				'Configured Responses endpoint profile',
-			),
+			detail: optionalString(value.detail, `${path}.detail`, '用户配置的 Responses 模型'),
 			maxInputTokens,
 			maxOutputTokens,
 			...(contextWindowTokens === undefined ? {} : { contextWindowTokens }),

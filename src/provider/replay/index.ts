@@ -12,5 +12,4 @@ export type {
 	ReplayMarkerMetadata,
 	ReplayMarkerParseResult,
 	ReplayMarkerPayloadFormat,
-	VisionMarkerTextIgnoredReason,
 } from './types';

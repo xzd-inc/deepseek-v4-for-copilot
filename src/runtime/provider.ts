@@ -11,9 +11,6 @@ export function registerProvider(context: vscode.ExtensionContext): DeepSeekChat
 			provider.configureApiKey(),
 		),
 		vscode.commands.registerCommand('responses-copilot.clearApiKey', () => provider.clearApiKey()),
-		vscode.commands.registerCommand('responses-copilot.setVisionModel', () =>
-			provider.setVisionModel(),
-		),
 		vscode.lm.registerLanguageModelChatProvider(MODEL_VENDOR, provider),
 	);
 

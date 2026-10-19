@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.2 — Generic model configuration UI
+
+- Remove GPT 6.1 Sol-specific wording from the settings and walkthrough UI while keeping the existing profile as a compatible default example.
+- Add a Chinese native model-management command that appends validated profiles without overwriting existing entries, then refreshes the Copilot model picker.
+- Keep token estimation calibration isolated per endpoint and transmitted API model, so switching between configured profiles does not reuse another model's observed ratio.
+- Clarify how to append additional GPT or Responses-compatible model profiles and provide profile details for custom model tooltips.
+
+## 0.1.1 — Native multimodal input and Chinese UI
+
+- Remove the legacy Vision Proxy command, settings, and translations; multimodal profiles send images directly through the Responses API.
+- Use the existing Chinese localization as the default for settings, command labels, and walkthrough text.
+- Keep the Responses for Copilot provider identity and existing configuration keys unchanged.
+
 ## 0.1.0 — Responses for Copilot
 
 - Establish an independent local fork identity: `responses-local.responses-for-copilot`, model vendor `responses-copilot`, and `responses-copilot.*` commands/settings. Use distinct branding and an original icon; preserve the upstream MIT notice and attribution. Settings and secrets remain separate from the upstream extension.

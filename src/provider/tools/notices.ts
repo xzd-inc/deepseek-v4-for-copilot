@@ -6,21 +6,9 @@ import {
 	VISION_PROXY_NOTICE_END,
 	VISION_PROXY_NOTICE_START,
 } from './consts';
-import { formatVisionProxyDisplayMessage } from '../vision/protocols/errors';
 
 type LanguageModelChatRequestMessagePart =
 	vscode.LanguageModelChatRequestMessage['content'][number];
-
-let visionProxyConfigurationUrl = 'command:responses-copilot.setVisionModel';
-let showLogsUrl = 'command:responses-copilot.showLogs';
-
-export function setVisionProxyConfigurationUrl(url: string): void {
-	visionProxyConfigurationUrl = url;
-}
-
-export function setProviderNoticeShowLogsUrl(url: string): void {
-	showLogsUrl = url;
-}
 
 export function createToolDriftNotice(): string {
 	return [
@@ -30,37 +18,6 @@ export function createToolDriftNotice(): string {
 		createBlockquote(t('notice.toolDrift')),
 		'',
 		TOOL_DRIFT_NOTICE_END,
-		'',
-	].join('\n');
-}
-
-export function createVisionProxyMissingNotice(): string {
-	return [
-		'',
-		VISION_PROXY_NOTICE_START,
-		'',
-		createBlockquote(t('notice.visionProxyMissing', visionProxyConfigurationUrl)),
-		'',
-		VISION_PROXY_NOTICE_END,
-		'',
-	].join('\n');
-}
-
-export function createVisionProxyFailureNotice(errorCode: string, errorMessage: string): string {
-	return [
-		'',
-		VISION_PROXY_NOTICE_START,
-		'',
-		createBlockquote(
-			t(
-				'notice.visionProxyFailure',
-				escapeBoldText(formatVisionProxyDisplayMessage(errorCode, errorMessage)),
-				createConfigureVisionProxyLink(),
-				createShowLogsLink(),
-			),
-		),
-		'',
-		VISION_PROXY_NOTICE_END,
 		'',
 	].join('\n');
 }
@@ -158,16 +115,4 @@ function createBlockquote(value: string): string {
 		.split(/\r?\n/)
 		.map((line) => (line.length > 0 ? `> ${line}` : '>'))
 		.join('\n');
-}
-
-function createConfigureVisionProxyLink(): string {
-	return `[${t('vision.action.configureProxy')}](${visionProxyConfigurationUrl})`;
-}
-
-function createShowLogsLink(): string {
-	return `[${t('error.action.viewDetails')}](${showLogsUrl})`;
-}
-
-function escapeBoldText(value: string): string {
-	return value.replaceAll('*', '\\*');
 }

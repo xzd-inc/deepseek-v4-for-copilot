@@ -21,20 +21,20 @@ export interface NormalizedToolResult {
 	originalContent: readonly unknown[];
 }
 
-export interface VisionInputMimeStats {
+export interface ImageInputMimeStats {
 	mimeType: string;
 	imageParts: number;
 	imageBytes: number;
 }
 
-export interface VisionInputSummary {
+export interface ImageInputSummary {
 	inputImageParts: number;
 	inputImageMessages: number;
 	inputImageBytes: number;
-	inputImageMimes: VisionInputMimeStats[];
+	inputImageMimes: ImageInputMimeStats[];
 	toolResultImageParts: number;
 	toolResultImageBytes: number;
-	toolResultImageMimes: VisionInputMimeStats[];
+	toolResultImageMimes: ImageInputMimeStats[];
 	toolResultsWithImages: number;
 }
 
@@ -56,11 +56,11 @@ export function normalizeToolResult(
 }
 
 /** Collect authoritative image metadata across supported provider input shapes. */
-export function collectVisionInputSummary(
+export function collectImageInputSummary(
 	messages: readonly vscode.LanguageModelChatRequestMessage[],
-): VisionInputSummary {
-	const inputMimeStats = new Map<string, VisionInputMimeStats>();
-	const toolResultMimeStats = new Map<string, VisionInputMimeStats>();
+): ImageInputSummary {
+	const inputMimeStats = new Map<string, ImageInputMimeStats>();
+	const toolResultMimeStats = new Map<string, ImageInputMimeStats>();
 	const messageIndexesWithInputImages = new Set<number>();
 	let inputImageParts = 0;
 	let inputImageBytes = 0;
@@ -89,12 +89,8 @@ export function collectVisionInputSummary(
 	};
 
 	for (const [messageIndex, message] of messages.entries()) {
-		if (message.role !== vscode.LanguageModelChatMessageRole.User) {
-			continue;
-		}
-
 		for (const part of message.content) {
-			if (isImageDataPart(part)) {
+			if (message.role === vscode.LanguageModelChatMessageRole.User && isImageDataPart(part)) {
 				recordInputImage(part, messageIndex);
 				continue;
 			}
@@ -153,7 +149,7 @@ function normalizeMimeType(mimeType: string): string {
 }
 
 function recordMimeStats(
-	stats: Map<string, VisionInputMimeStats>,
+	stats: Map<string, ImageInputMimeStats>,
 	mimeType: string,
 	byteLength: number,
 ): void {
@@ -170,6 +166,6 @@ function recordMimeStats(
 	});
 }
 
-function sortMimeStats(stats: Map<string, VisionInputMimeStats>): VisionInputMimeStats[] {
+function sortMimeStats(stats: Map<string, ImageInputMimeStats>): ImageInputMimeStats[] {
 	return [...stats.values()].sort((a, b) => a.mimeType.localeCompare(b.mimeType));
 }

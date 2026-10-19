@@ -177,6 +177,9 @@ test('wire request uses Responses fields only and explicit non-strict VS Code fu
 	assert.deepEqual(body.reasoning, { effort: 'high', summary: 'auto' });
 	assert.equal(body.max_output_tokens, 64000);
 	assert.equal(body.prompt_cache_key, 'test-key');
+	const encryptedInputBody = createResponsesRequestBody(request([reasoning()]));
+	assert.equal(encryptedInputBody.input[0].encrypted_content, 'opaque-reasoning-state');
+	assert.deepEqual(encryptedInputBody.include, ['reasoning.encrypted_content']);
 	assert.equal(body.tool_choice, 'required');
 	assert.equal(body.tools[0].name, 'read_file');
 	assert.equal(body.tools[0].strict, false);
@@ -266,6 +269,20 @@ test('configured model limits reserve output within total context and honor redu
 	settings.clear();
 });
 
+test('configured model profiles expose multiple provider models without protocol changes', () => {
+	settings.set('models', [
+		{ id: 'gpt-6.1-sol', name: 'GPT 6.1 Sol', maxInputTokens: 208000, maxOutputTokens: 64000 },
+		{ id: 'gpt-5.6-sol', name: 'GPT 5.6 Sol', maxInputTokens: 128000, maxOutputTokens: 16000, toolCalling: true, imageInput: true },
+	]);
+	assert.deepEqual(getConfiguredModels().map((model) => [model.id, model.name]), [
+		['gpt-6.1-sol', 'GPT 6.1 Sol'],
+		['gpt-5.6-sol', 'GPT 5.6 Sol'],
+	]);
+	assert.equal(getConfiguredModels()[1].capabilities.toolCalling, true);
+	assert.equal(getConfiguredModels()[1].capabilities.imageInput, true);
+	settings.clear();
+});
+
 test('provider request prepares effort, output cap, required tools and stable cache keys', async () => {
 	settings.clear();
 	const model = getConfiguredModels()[0];
@@ -275,9 +292,7 @@ test('provider request prepares effort, output cap, required tools and stable ca
 		segment: { id: 'test' },
 		messages: [{ role: 3, content: [new TextPart('Stable system prefix')] }, { role: 1, content: [new TextPart('Hello')] }],
 		options: { modelOptions: { reasoningEffort: 'max' }, toolMode: 2, tools: [{ name: 'read_file', inputSchema: { type: 'object', properties: {} } }] },
-		token: { isCancellationRequested: false },
 		cacheDiagnostics: { beginRequest() { return {}; } },
-		async getVisionDescriber() { return undefined; },
 	};
 	const first = await prepareChatRequest(base);
 	const second = await prepareChatRequest({ ...base, messages: [...base.messages, { role: 2, content: [new TextPart('Hi')] }, { role: 1, content: [new TextPart('Continue')] }] });
@@ -298,6 +313,94 @@ test('provider request prepares effort, output cap, required tools and stable ca
 	settings.set('promptCacheKey', '');
 	assert.equal((await prepareChatRequest(base)).request.prompt_cache_key, undefined);
 	settings.clear();
+});
+
+test('provider sends attachments and tool-result images directly to the Responses endpoint', async (t) => {
+	settings.clear();
+	t.after(() => settings.clear());
+	const requests = [];
+	const server = createServer(async (req, res) => {
+		let body = '';
+		for await (const chunk of req) body += chunk;
+		requests.push({ url: req.url, body: JSON.parse(body) });
+		res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+		res.end(sse(complete([message('Image received')])));
+	});
+	await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+	t.after(() => new Promise((resolve) => server.close(resolve)));
+	settings.set('baseUrl', `http://127.0.0.1:${server.address().port}/v1`);
+	// Leftover settings from older versions must not route images to another model.
+	settings.set('visionModel', { source: 'endpoint', baseUrl: 'https://unused.invalid' });
+	settings.set('visionPrompt', 'Obsolete OCR prompt');
+	const image = new DataPart(Uint8Array.of(1, 2, 3), 'image/png');
+	const messages = [
+		{ role: 1, content: [new TextPart('Describe this image'), image] },
+		{ role: 2, content: [new ToolCallPart('call_image', 'screenshot', {})] },
+		{ role: 1, content: [new ToolResultPart('call_image', [new TextPart('Screenshot'), image])] },
+	];
+	let diagnostics;
+	const prepared = await prepareChatRequest({
+		authManager: { async getApiKey() { return 'test-token'; } },
+		modelInfo: getConfiguredModels()[0], globalStorageUri: { fsPath: '/unused-test' },
+		segment: { id: 'image-test' }, messages, options: {},
+		cacheDiagnostics: { beginRequest(value) { diagnostics = value; return {}; } },
+	});
+	assert.equal(prepared.hasNativeImages, true);
+	assert.equal(diagnostics.resolvedMessages, messages);
+	assert.equal(diagnostics.imageStats.inputImageParts, 1);
+	assert.equal(diagnostics.imageStats.toolResultImageParts, 1);
+	assert.equal(diagnostics.imageStats.toolResultsWithImages, 1);
+	const response = recorder();
+	await prepared.client.streamChatCompletion(prepared.request, response.callbacks);
+	assert.equal(response.result.text, 'Image received');
+	assert.equal(requests.length, 1);
+	assert.equal(requests[0].url, '/v1/responses');
+	assert.deepEqual(requests[0].body.input[0].content, [
+		{ type: 'input_text', text: 'Describe this image' },
+		{ type: 'input_image', image_url: 'data:image/png;base64,AQID', detail: 'auto' },
+	]);
+	assert.deepEqual(requests[0].body.input.at(-1), {
+		type: 'function_call_output', call_id: 'call_image', output: [
+			{ type: 'input_text', text: 'Screenshot' },
+			{ type: 'input_image', image_url: 'data:image/png;base64,AQID', detail: 'auto' },
+		],
+	});
+});
+
+test('text-only profiles reject attachments and nested tool images instead of dropping them', async (t) => {
+	settings.clear();
+	t.after(() => settings.clear());
+	settings.set('models', [{ id: 'text-only', maxInputTokens: 16000, maxOutputTokens: 4000, imageInput: false }]);
+	const image = new DataPart(Uint8Array.of(1, 2, 3), 'image/png');
+	for (const message of [
+		{ role: 1, content: [new TextPart('Describe'), image] },
+		{ role: 1, content: [new ToolResultPart('call_image', [image])] },
+		{ role: 2, content: [new ToolResultPart('call_image', [image])] },
+	]) {
+		await assert.rejects(prepareChatRequest({
+			authManager: { async getApiKey() { return 'test-token'; } },
+			modelInfo: getConfiguredModels()[0], globalStorageUri: { fsPath: '/unused-test' },
+			segment: { id: 'image-test' }, messages: [message], options: {},
+			cacheDiagnostics: { beginRequest() { assert.fail('Unsupported images must fail before diagnostics'); } },
+		}), /未启用原生图片输入/);
+	}
+});
+
+test('legacy image-description caches are ignored while canonical reasoning remains replayable', () => {
+	const oldPayload = {
+		vision: { text: 'Obsolete image description' },
+		toolVision: { results: [{ callId: 'call_a', resolvedContent: 'Obsolete tool description', imageParts: 1 }] },
+		outputItems: [reasoning(), call()], reasoningTokens: 20,
+	};
+	const sample = createReplayMarkerPart({ outputItems: oldPayload.outputItems });
+	const prefix = new TextDecoder().decode(sample.data).split('\\')[0];
+	const parsed = parseReplayMarkerData(new TextEncoder().encode(`${prefix}\\${JSON.stringify(oldPayload)}`));
+	assert.equal(parsed.valid, true);
+	assert.equal('visionText' in parsed, false);
+	assert.equal('toolVision' in parsed, false);
+	assert.deepEqual(parsed.outputItems, oldPayload.outputItems);
+	assert.deepEqual(parsed.reasoningItems, [reasoning()]);
+	assert.equal(parsed.reasoningTokens, 20);
 });
 
 test('reasoning efforts resolve all supported option paths, reject unsupported values and explicitly disable', () => {

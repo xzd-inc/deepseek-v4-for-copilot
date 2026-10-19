@@ -1,4 +1,4 @@
-在 Copilot Chat 中选择 **GPT 6.1 Sol**。若模型隐藏，请打开语言模型管理器，在 **Responses for Copilot** 提供方下显示它。
+在 Copilot Chat 中选择 **Responses for Copilot** 中已配置的模型。若模型隐藏，请打开语言模型管理器，在提供方下显示它。
 
 未配置密钥时，模型会显示警告并提示运行 **Responses for Copilot: 设置 API Key**。
 

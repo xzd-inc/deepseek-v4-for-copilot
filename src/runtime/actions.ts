@@ -1,22 +1,13 @@
 import vscode from 'vscode';
 import { setErrorActionUrl, type ErrorActionUrls } from '../client';
-import {
-	CONFIGURE_API_KEY_URI_PATH,
-	SET_VISION_MODEL_URI_PATH,
-	SHOW_LOGS_URI_PATH,
-} from '../consts';
+import { CONFIGURE_API_KEY_URI_PATH, SHOW_LOGS_URI_PATH } from '../consts';
 import { logger } from '../logger';
-import {
-	setProviderNoticeShowLogsUrl,
-	setVisionProxyConfigurationUrl,
-} from '../provider/tools/notices';
 
 interface ActionUrlDefinition {
 	key?: keyof ErrorActionUrls;
 	path: string;
 	handle: () => void | Thenable<unknown>;
 	resolveFailureMessage: string;
-	setUrl?: (url: string) => void;
 	externalize?: boolean;
 }
 
@@ -32,13 +23,6 @@ const ACTION_URLS: readonly ActionUrlDefinition[] = [
 		path: SHOW_LOGS_URI_PATH,
 		handle: () => logger.show(),
 		resolveFailureMessage: 'Failed to resolve Responses for Copilot show logs URI',
-		setUrl: setProviderNoticeShowLogsUrl,
-	},
-	{
-		path: SET_VISION_MODEL_URI_PATH,
-		handle: () => vscode.commands.executeCommand('responses-copilot.setVisionModel'),
-		resolveFailureMessage: 'Failed to resolve Responses for Copilot set vision model URI',
-		setUrl: setVisionProxyConfigurationUrl,
 	},
 ];
 
@@ -84,5 +68,4 @@ function setActionUrl(action: ActionUrlDefinition, url: string): void {
 	if (action.key) {
 		setErrorActionUrl(action.key, url);
 	}
-	action.setUrl?.(url);
 }

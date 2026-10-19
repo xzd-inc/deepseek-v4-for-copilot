@@ -3,6 +3,28 @@ import { parseReplayMarkerData, REPLAY_MARKER_MIME } from './replay';
 
 const IMAGE_PART_FIXED_TOKENS = 384;
 
+export function tokenCalibrationKey(endpoint: string, apiModelId: string): string {
+	return JSON.stringify([endpoint, apiModelId]);
+}
+
+export class TokenCalibration {
+	private readonly ratios = new Map<string, number>();
+
+	get(key: string): number {
+		return this.ratios.get(key) ?? 4.0;
+	}
+
+	set(key: string, ratio: number): void {
+		if (!Number.isFinite(ratio) || ratio <= 0) return;
+		this.ratios.delete(key);
+		this.ratios.set(key, ratio);
+		if (this.ratios.size > 32) {
+			const oldest = this.ratios.keys().next().value;
+			if (oldest !== undefined) this.ratios.delete(oldest);
+		}
+	}
+}
+
 interface PartTokenEstimate {
 	textChars: number;
 	fixedTokens: number;
@@ -43,9 +65,8 @@ function estimatePartTokens(part: unknown): PartTokenEstimate {
 		return { textChars, fixedTokens };
 	}
 
-	// 4. LanguageModelDataPart — use a capped heuristic because our model never
-	//    receives binary data directly. Images are resolved to text descriptions
-	//    by the vision pipeline; raw byteLength would massively overestimate.
+	// 4. LanguageModelDataPart — images are forwarded natively. Their token cost
+	//    depends on model-specific image processing, not the binary byte length.
 	if (part instanceof vscode.LanguageModelDataPart) {
 		const mime = part.mimeType;
 		if (mime === REPLAY_MARKER_MIME) {

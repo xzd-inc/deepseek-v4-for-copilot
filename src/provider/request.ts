@@ -23,25 +23,21 @@ import type { ReplayMarkerMetadata } from './replay';
 import { classifyDeepSeekRequest, type RequestKind } from './routing';
 import type { ConversationSegment } from './segment';
 import { collectTrailingToolResultIds, prepareRequestTools } from './tools/request';
-import {
-	finalizeVisionResolutionStats,
-	prepareVisionMessages,
-	type VisionDescriber,
-} from './vision';
+import { collectImageInputSummary } from './images';
+import { tokenCalibrationKey } from './tokens';
 
 export interface PreparedChatRequest {
 	client: DeepSeekClient;
 	request: DeepSeekRequest;
 	isThinkingModel: boolean;
 	totalRequestChars: number;
+	tokenCalibrationKey: string;
 	hasNativeImages: boolean;
 	trailingToolResultIds: string[];
 	cacheDiagnostics: CacheDiagnosticsRun;
 	requestKind: RequestKind;
 	segment: ConversationSegment;
 	replayMarkerMetadata: ReplayMarkerMetadata;
-	visionMarkerTextChars?: number;
-	initialResponseNotice?: string;
 }
 
 export interface PrepareChatRequestOptions {
@@ -52,9 +48,7 @@ export interface PrepareChatRequestOptions {
 	segment: ConversationSegment;
 	messages: readonly vscode.LanguageModelChatRequestMessage[];
 	options: vscode.ProvideLanguageModelChatResponseOptions;
-	token: vscode.CancellationToken;
 	cacheDiagnostics: CacheDiagnosticsRecorder;
-	getVisionDescriber: () => Promise<VisionDescriber | undefined>;
 }
 
 export async function prepareChatRequest({
@@ -65,9 +59,7 @@ export async function prepareChatRequest({
 	segment,
 	messages,
 	options,
-	token,
 	cacheDiagnostics,
-	getVisionDescriber,
 }: PrepareChatRequestOptions): Promise<PreparedChatRequest> {
 	const apiKey = await authManager.getApiKey();
 	if (!apiKey) {
@@ -92,25 +84,16 @@ export async function prepareChatRequest({
 		modelDef.maxOutputTokens,
 		modelInfo.maxOutputTokens,
 	);
-	const visionResolution = await prepareVisionMessages({
-		messages,
-		nativeImageInput,
-		token,
-		getDescriber: getVisionDescriber,
-	});
-
-	const resolvedMessages = visionResolution.messages;
-
-	const deepseekMessages = convertMessages(resolvedMessages, isThinkingModel, nativeImageInput);
-	finalizeVisionResolutionStats(visionResolution.stats, deepseekMessages);
-	const tools = prepareRequestTools(modelDef?.capabilities.toolCalling, options);
-
+	const imageStats = collectImageInputSummary(messages);
+	const hasNativeImages = imageStats.inputImageParts + imageStats.toolResultImageParts > 0;
+	if (hasNativeImages && !nativeImageInput) {
+		throw new Error(
+			'当前模型未启用原生图片输入，请选择多模态模型，或在模型配置中启用 imageInput。',
+		);
+	}
+	const deepseekMessages = convertMessages(messages, isThinkingModel, nativeImageInput);
+	const tools = prepareRequestTools(modelDef.capabilities.toolCalling, options);
 	const totalRequestChars = countMessageChars(deepseekMessages);
-	const hasNativeImages =
-		visionResolution.stats.imageHandlingMode === 'native' &&
-		visionResolution.stats.input.forwardedImageParts +
-			visionResolution.stats.tool.forwardedImageParts >
-			0;
 	const apiModelId = getApiModelId(modelInfo.id);
 	const baseRequest: DeepSeekRequest = {
 		model: apiModelId,
@@ -147,11 +130,9 @@ export async function prepareChatRequest({
 		thinkingEffort,
 		maxTokens,
 		inputMessages: messages,
-		resolvedMessages,
+		resolvedMessages: messages,
 		requestOptions: options,
-		visionModelId: visionResolution.visionModelId,
-		visionProxySource: visionResolution.visionProxySource,
-		visionStats: visionResolution.stats,
+		imageStats,
 	});
 
 	const diagnosticsRun = cacheDiagnostics.beginRequest({
@@ -163,10 +144,8 @@ export async function prepareChatRequest({
 		thinkingEffort,
 		maxTokens,
 		inputMessages: messages,
-		resolvedMessages,
-		visionModelId: visionResolution.visionModelId,
-		visionProxySource: visionResolution.visionProxySource,
-		visionStats: visionResolution.stats,
+		resolvedMessages: messages,
+		imageStats,
 	});
 
 	return {
@@ -175,13 +154,12 @@ export async function prepareChatRequest({
 		isThinkingModel,
 		totalRequestChars,
 		hasNativeImages,
+		tokenCalibrationKey: tokenCalibrationKey(baseUrl, apiModelId),
 		trailingToolResultIds: collectTrailingToolResultIds(deepseekMessages),
 		cacheDiagnostics: diagnosticsRun,
 		requestKind,
 		segment,
-		replayMarkerMetadata: visionResolution.replayMarkerMetadata,
-		visionMarkerTextChars: visionResolution.stats.markerVisionTextChars || undefined,
-		initialResponseNotice: visionResolution.initialResponseNotice,
+		replayMarkerMetadata: {},
 	};
 }
 

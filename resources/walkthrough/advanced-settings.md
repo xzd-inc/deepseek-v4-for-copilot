@@ -1,9 +1,9 @@
-Configure the Responses URL, models, output cap, and prompt cache key under **responses-copilot** in Settings.
+在 **responses-copilot** 设置中配置 Responses 地址、模型、输出上限和提示词缓存键。
 
-- The default URL is https://gd.yundu.lol/v1/responses. Full /responses URLs are kept; other base URLs have /responses appended. Include /v1 where needed.
-- Model profiles replace the defaults. Only enable capabilities and reasoning efforts supported by your endpoint.
-- The supplied 272,000 total context bound reserves 64,000 output tokens, leaving a 208,000 input budget. A lower maxTokens cap changes both effective picker budgets.
-- promptCacheKey defaults to auto; an empty string omits the cache key. Hits and billing depend on the service.
-- Experimental tool-list stabilization is off by default and may add input tokens and internal tool calls.
+- 默认地址为 https://gd.yundu.lol/v1/responses。完整 /responses 地址直接使用，基础地址追加 /responses，需要 /v1 时请自行包含。
+- 模型配置替换默认列表，只应启用端点明确支持的能力和思考强度。
+- 用户配置的上下文合计限制是 272,000，预留 64,000 输出后输入预算是 208,000。更低的 maxTokens 会改变选择器中的两个生效额度。
+- promptCacheKey 默认 auto，空字符串表示不发送缓存键，命中与计费取决于服务。
+- 实验性稳定工具列表默认关闭，可能增加输入令牌和内部工具调用。
 
-[Open settings](command:responses-copilot.openSettings)
+[打开设置](command:responses-copilot.openSettings)
